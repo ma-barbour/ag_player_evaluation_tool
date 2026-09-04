@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A&G Player Evaluation Tool</title>
+    <!-- PapaParse Library for reading Google Sheets CSVs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #ffffff; 
+            --surface: #ffffff;
+            --primary: #1b4332; 
+            --accent: #2d6a4f; 
+            --accent-hover: #40916c;
+            --text-main: #1e293b;
+            --border: #d1d5db;
+            --header-text: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header-container {
+            max-width: 95%;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--primary);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- TAB SYSTEM CSS --- */
+        .tabs {
+            max-width: 95%;
+            margin: 0 auto 20px auto;
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            background: none;
+            color: var(--text-main);
+            border: 2px solid transparent;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 10px 20px;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+
+        .tab-btn:hover { background-color: #f1f5f9; }
+        
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Controls / Search bars */
+        .controls { display: flex; gap: 10px; align-items: center; }
+        
+        input[type="text"] {
+            padding: 10px; width: 300px;
+            border: 1px solid var(--border); border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 16px; background-color: var(--accent);
+            color: white; border: none; border-radius: 6px;
+            cursor: pointer; font-weight: 600;
+        }
+        button:hover { background-color: var(--accent-hover); }
+        .btn-clear { background-color: #ef4444; }
+        .btn-clear:hover { background-color: #dc2626; }
+
+        /* Dashboard Tables */
+        .dashboard {
+            max-width: 95%; margin: 0 auto;
+            background: var(--surface); border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            overflow-x: auto; max-height: 75vh;
+            border: 1px solid var(--border);
+        }
+
+        table { border-collapse: collapse; white-space: nowrap; font-size: 13px; width: 100%; }
+        th, td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+        
+        /* Sticky First Column */
+        #outputTable th:first-child, #outputTable td:first-child {
+            text-align: left; position: sticky; left: 0; z-index: 3;
+            font-weight: bold; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .top-header { background-color: var(--primary); color: var(--header-text); position: sticky; top: 0; z-index: 2; }
+        
+        #outputTable th:first-child.top-header { background-color: #1e293b; z-index: 4; }
+        #outputTable th:last-child.top-header { background-color: #dc2626; z-index: 4; }
+
+        .group-header {
+            text-align: center !important; font-weight: 700; font-size: 14px;
+            text-transform: uppercase; position: sticky; top: 0; z-index: 2;
+        }
+        
+        .recent-group { background-color: #334155 !important; color: #ffffff !important; }
+        .season-group { background-color: #cbd5e1 !important; color: #0f172a !important; }
+
+        /* Row Striping */
+        tbody tr:nth-child(odd) td { background-color: #ffffff; }
+        tbody tr:nth-child(even) td { background-color: #f1f5f9; }
+        
+        #outputTable tbody tr:nth-child(odd) td:first-child { background-color: #ffffff; }
+        #outputTable tbody tr:nth-child(even) td:first-child { background-color: #f1f5f9; }
+
+        .remove-btn { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px; font-weight: bold; }
+        .remove-btn:hover { color: #991b1b; }
+        
+        #loadingMsg { text-align: center; padding: 20px; font-weight: bold; color: var(--primary); }
+
+        /* Compare Tab Specifics */
+        .compare-grid { max-width: 95%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        #compareTable th { background-color: var(--primary); color: white; position: sticky; top: 0; }
+        #compareTable th.stat-col { background-color: #cbd5e1; color: #0f172a; font-weight: 800; font-size: 14px; }
+        #compareTable td.stat-name { font-weight: bold; background-color: #e2e8f0 !important; color: #0f172a; text-transform: uppercase; font-size: 12px; }
+        
+        .player-header {
+            position: relative;
+            font-size: 20px !important;
+            height: 85px; 
+            padding: 0 20px !important; /* Added 20px buffer on left and right */
+            vertical-align: middle;
+            text-align: center;
+            overflow: hidden;
+            background-color: #ffffff !important; 
+            border-bottom: 2px solid var(--border);
+        }
+
+        .player-header span {
+            position: relative;
+            z-index: 2;
+            color: #0f172a; 
+            font-weight: 900;
+            text-shadow: 0px 0px 8px rgba(255, 255, 255, 1), 0px 0px 12px rgba(255, 255, 255, 0.8), 1px 1px 0px #ffffff, -1px -1px 0px #ffffff;
+            display: inline-block; /* Ensures padding scales cleanly if name wraps */
+        }
+
+        .header-bg {
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.25; 
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>A&G Player Evaluation Tool</h1>
+    </div>
+
+    <!-- TAB NAVIGATION -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('evalTab', this)">Player Evaluation</button>
+        <button class="tab-btn" onclick="switchTab('compareTab', this)">Player Comparison</button>
+    </div>
+
+    <div id="loadingMsg">Loading live data from Google Sheets...</div>
+
+    <!-- ============================================== -->
+    <!-- TAB 1: PLAYER EVALUATION                       -->
+    <!-- ============================================== -->
+    <div id="evalTab" class="tab-content active">
+        <div class="header-container" style="padding-top:0;">
+            <div class="controls">
+                <input type="text" id="playerSearch" list="playerList" placeholder="Search and add a player...">
+                <datalist id="playerList"></datalist>
+                <button onclick="addPlayer()">Add Player</button>
+                <button class="btn-clear" onclick="clearDashboard()">Clear All</button>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <table id="outputTable">
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="top-header">Player</th>
+                        <th colspan="16" class="group-header recent-group">Last 5 Games Only</th>
+                        <th colspan="18" class="group-header season-group">Full Season Stats</th>
+                        <th rowspan="2" class="top-header">Remove</th>
+                    </tr>
+                    <tr>
+                        <th class="recent-group">GP</th><th class="recent-group">G</th><th class="recent-group">A</th><th class="recent-group">PTS</th>
+                        <th class="recent-group">ATOI</th><th class="recent-group">Shots/60</th><th class="recent-group">iCF/60</th>
+                        <th class="recent-group">iSCF/60</th><th class="recent-group">ixG/60</th><th class="recent-group">CF/60</th>
+                        <th class="recent-group">SCF/60</th><th class="recent-group">xG/60</th><th class="recent-group">xGP</th>
+                        <th class="recent-group">IPP</th><th class="recent-group">S%</th><th class="recent-group">oiSH%</th>
+                        
+                        <th class="season-group">GP</th><th class="season-group">G</th><th class="season-group">A</th><th class="season-group">PTS</th>
+                        <th class="season-group">82G</th><th class="season-group">82PTS</th><th class="season-group">ATOI</th>
+                        <th class="season-group">Shots/60</th><th class="season-group">iCF/60</th><th class="season-group">iSCF/60</th>
+                        <th class="season-group">ixG/60</th><th class="season-group">CF/60</th><th class="season-group">SCF/60</th>
+                        <th class="season-group">xG/60</th><th class="season-group">xGP</th><th class="season-group">IPP</th>
+                        <th class="season-group">S%</th><th class="season-group">oiSH%</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboardBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: PLAYER COMPARISON                       -->
+    <!-- ============================================== -->
+    <div id="compareTab" class="tab-content">
+        <div class="compare-grid">
+            <div class="controls">
+                <input type="text" id="p1Search" list="playerList" placeholder="Select Player 1...">
+                <span style="font-weight:bold; color:var(--primary);">VS</span>
+                <input type="text" id="p2Search" list="playerList" placeholder="Select Player 2...">
+                <button onclick="renderComparison()">Compare Stats</button>
+            </div>
+
+            <div class="dashboard">
+                <table id="compareTable">
+                    <thead>
+                        <tr>
+                            <th colspan="2" id="p1NameHeader" class="player-header"><span>Player 1</span></th>
+                            <th class="stat-col">STATISTIC</th>
+                            <th colspan="2" id="p2NameHeader" class="player-header"><span>Player 2</span></th>
+                        </tr>
+                        <tr>
+                            <th class="recent-group" style="font-size:12px;">Last 5 Games</th>
+                            <th class="season-group" style="font-size:12px;">Season</th>
+                            <th class="stat-col"></th>
+                            <th class="season-group" style="font-size:12px;">Season</th>
+                            <th class="recent-group" style="font-size:12px;">Last 5 Games</th>
+                        </tr>
+                    </thead>
+                    <tbody id="compareBody">
+                        <tr><td colspan="5" style="padding:40px; color:#64748b;">Select two players above to view comparison.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Updated Sheet ID and exact tab names from the new raw data source
+        const sheetId = "1FxlF_jSAyqgHbhx7SoD5ha5LxkJCssYx-spycz6Ev2A";
+        const seasonCSVUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=full_season`; 
+        const recentCSVUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=five_gp`;
+        const skatersCSVUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=data_validation`; 
+
+        let fullDatabase = {};
+        let selectedPlayers = []; 
+
+        const fmt = (val, dec=2) => (typeof val === 'number') ? val.toFixed(dec) : (val || '-');
+        const rnk = (val) => val ? val : '-';
+
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            btnElement.classList.add('active');
+        }
+
+        async function fetchGoogleSheetsData() {
+            try {
+                const [seasonResponse, recentResponse, skatersResponse] = await Promise.all([
+                    fetch(seasonCSVUrl), fetch(recentCSVUrl), fetch(skatersCSVUrl)
+                ]);
+
+                if (!seasonResponse.ok || !recentResponse.ok || !skatersResponse.ok) throw new Error("Could not fetch data.");
+
+                const seasonData = Papa.parse(await seasonResponse.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
+                const recentData = Papa.parse(await recentResponse.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
+                const skatersData = Papa.parse(await skatersResponse.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
+
+                // Build Base Data
+                seasonData.forEach(row => { if(row.skater) fullDatabase[row.skater] = { season: row, recent: null, team: null }; });
+                recentData.forEach(row => { if(row.skater && fullDatabase[row.skater]) fullDatabase[row.skater].recent = row; });
+                
+                // Add Team info from new data_validation sheet
+                skatersData.forEach(row => { 
+                    if(row.skater && fullDatabase[row.skater]) {
+                        fullDatabase[row.skater].team = row.team; 
+                    } 
+                });
+
+                initializeApp();
+            } catch (error) {
+                document.getElementById('loadingMsg').innerHTML = `<span style="color:red;">Error loading live data: ${error.message}</span>`;
+            }
+        }
+
+        function initializeApp() {
+            document.getElementById('loadingMsg').style.display = 'none';
+            
+            const datalist = document.getElementById('playerList');
+            Object.keys(fullDatabase).sort().forEach(player => {
+                const option = document.createElement('option');
+                option.value = player;
+                datalist.appendChild(option);
+            });
+
+            renderDashboard();
+        }
+
+        // --- EVALUATION TAB ---
+        function renderDashboard() {
+            const tbody = document.getElementById('dashboardBody');
+            tbody.innerHTML = '';
+            
+            if(selectedPlayers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="36" style="padding:40px; color:#64748b;">No players selected. Search and add a player above.</td></tr>';
+                return;
+            }
+
+            selectedPlayers.forEach(playerName => {
+                const data = fullDatabase[playerName];
+                if(!data) return;
+
+                const s = data.season || {};
+                const r = data.recent || {};
+                const row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <td>${playerName}</td>
+                    <td>${fmt(r.gp, 0)}</td><td>${fmt(r.goals, 0)}</td><td>${fmt(r.assists, 0)}</td><td>${fmt(r.points, 0)}</td>
+                    <td>${fmt(r.toi_gp)}</td><td>${rnk(r.i_shots_60_rank)}</td><td>${rnk(r.i_cf_60_rank)}</td>
+                    <td>${rnk(r.i_scf_60_rank)}</td><td>${rnk(r.i_xg_adjusted_60_rank)}</td><td>${rnk(r.oi_cf_60_rank)}</td>
+                    <td>${rnk(r.oi_scf_60_rank)}</td><td>${rnk(r.oi_xg_adjusted_60_rank)}</td><td>${fmt(r.skt_xg_adjusted_percent, 4)}</td>
+                    <td>${fmt(r.ipp)}</td><td>${fmt(r.sh_percent)}</td><td>${fmt(r.oi_sh_percent)}</td>
+                    
+                    <td>${fmt(s.gp, 0)}</td><td>${fmt(s.goals, 0)}</td><td>${fmt(s.assists, 0)}</td><td>${fmt(s.points, 0)}</td>
+                    <td>${fmt(s.goals_82, 0)}</td><td>${fmt(s.points_82, 0)}</td><td>${fmt(s.toi_gp)}</td>
+                    <td>${rnk(s.i_shots_60_rank)}</td><td>${rnk(s.i_cf_60_rank)}</td><td>${rnk(s.i_scf_60_rank)}</td>
+                    <td>${rnk(s.i_xg_adjusted_60_rank)}</td><td>${rnk(s.oi_cf_60_rank)}</td><td>${rnk(s.oi_scf_60_rank)}</td>
+                    <td>${rnk(s.oi_xg_adjusted_60_rank)}</td><td>${fmt(s.skt_xg_adjusted_percent, 4)}</td><td>${fmt(s.ipp)}</td>
+                    <td>${fmt(s.sh_percent)}</td><td>${fmt(s.oi_sh_percent)}</td>
+                    <td><button class="remove-btn" onclick="removePlayer('${playerName}')">X</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function addPlayer() {
+            const val = document.getElementById('playerSearch').value.trim();
+            if(val && fullDatabase[val] && !selectedPlayers.includes(val)) {
+                selectedPlayers.push(val);
+                document.getElementById('playerSearch').value = '';
+                renderDashboard();
+            }
+        }
+
+        function removePlayer(name) {
+            selectedPlayers = selectedPlayers.filter(p => p !== name);
+            renderDashboard();
+        }
+
+        function clearDashboard() {
+            selectedPlayers = [];
+            renderDashboard();
+        }
+
+        document.getElementById('playerSearch').addEventListener("keypress", (e) => {
+            if(e.key === "Enter") { e.preventDefault(); addPlayer(); }
+        });
+
+        // --- COMPARISON TAB ---
+        function renderComparison() {
+            const p1Name = document.getElementById('p1Search').value.trim();
+            const p2Name = document.getElementById('p2Search').value.trim();
+            const tbody = document.getElementById('compareBody');
+            
+            if(!fullDatabase[p1Name] || !fullDatabase[p2Name]) {
+                alert("Please select two valid players from the dropdown lists.");
+                return;
+            }
+
+            const t1 = fullDatabase[p1Name].team ? fullDatabase[p1Name].team : 'NHL';
+            const t2 = fullDatabase[p2Name].team ? fullDatabase[p2Name].team : 'NHL';
+
+            document.getElementById('p1NameHeader').innerHTML = `
+                <div class="header-bg" style="background-image: url('https://assets.nhle.com/logos/nhl/svg/${t1}_light.svg');"></div>
+                <span>${p1Name}</span>
+            `;
+            document.getElementById('p2NameHeader').innerHTML = `
+                <div class="header-bg" style="background-image: url('https://assets.nhle.com/logos/nhl/svg/${t2}_light.svg');"></div>
+                <span>${p2Name}</span>
+            `;
+
+            const p1_s = fullDatabase[p1Name].season || {};
+            const p1_r = fullDatabase[p1Name].recent || {};
+            const p2_s = fullDatabase[p2Name].season || {};
+            const p2_r = fullDatabase[p2Name].recent || {};
+
+            const statsToCompare = [
+                { label: "Games Played", k: "gp", f: (v) => fmt(v, 0) },
+                { label: "Goals", k: "goals", f: (v) => fmt(v, 0) },
+                { label: "Assists", k: "assists", f: (v) => fmt(v, 0) },
+                { label: "Points", k: "points", f: (v) => fmt(v, 0) },
+                { label: "Average TOI", k: "toi_gp", f: (v) => fmt(v, 2) },
+                { label: "IPP", k: "ipp", f: (v) => fmt(v, 2) },
+                { label: "SH%", k: "sh_percent", f: (v) => fmt(v, 2) },
+                { label: "oiSH%", k: "oi_sh_percent", f: (v) => fmt(v, 2) },
+                { label: "xGP", k: "skt_xg_adjusted_percent", f: (v) => fmt(v, 4) },
+                { label: "Shots/60 Rank", k: "i_shots_60_rank", f: rnk },
+                { label: "iCF/60 Rank", k: "i_cf_60_rank", f: rnk },
+                { label: "iSCF/60 Rank", k: "i_scf_60_rank", f: rnk },
+                { label: "ixG/60 Rank", k: "i_xg_adjusted_60_rank", f: rnk },
+                { label: "CF/60 Rank", k: "oi_cf_60_rank", f: rnk },
+                { label: "SCF/60 Rank", k: "oi_scf_60_rank", f: rnk },
+                { label: "xG/60 Rank", k: "oi_xg_adjusted_60_rank", f: rnk }
+            ];
+
+            tbody.innerHTML = '';
+
+            statsToCompare.forEach(stat => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${stat.f(p1_r[stat.k])}</td>
+                    <td>${stat.f(p1_s[stat.k])}</td>
+                    <td class="stat-name">${stat.label}</td>
+                    <td>${stat.f(p2_s[stat.k])}</td>
+                    <td>${stat.f(p2_r[stat.k])}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        fetchGoogleSheetsData();
+
+    </script>
+</body>
+</html>
