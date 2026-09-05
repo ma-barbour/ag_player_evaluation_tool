@@ -169,6 +169,20 @@
         .recent-group { background-color: #334155 !important; color: #ffffff !important; }
         .season-group { background-color: #cbd5e1 !important; color: #0f172a !important; }
 
+        /* 1) Remove ALL internal grid lines within headers for a cleaner look */
+        #outputTable thead th, #compareTable thead th {
+            border-right: none !important;
+            border-bottom: none !important;
+        }
+        /* Add one solid line beneath the entire header block */
+        #outputTable thead, #compareTable thead {
+            border-bottom: 2px solid var(--border);
+        }
+        /* Ensure the player header keeps its bottom border for separation */
+        #compareTable th.player-header {
+            border-bottom: 2px solid var(--border) !important;
+        }
+
         /* Row Striping */
         tbody tr:nth-child(odd) td { background-color: #ffffff; }
         tbody tr:nth-child(even) td { background-color: #f1f5f9; }
@@ -187,7 +201,19 @@
         #compareTable th.stat-col { background-color: #cbd5e1; color: #0f172a; font-weight: 800; font-size: 14px; }
         #compareTable td.stat-name { font-weight: bold; background-color: #e2e8f0 !important; color: #0f172a; text-transform: uppercase; font-size: 12px; }
         
+        /* 2) Fix sticky headers on Compare tab to eliminate the data scroll gap */
+        #compareTable thead tr:first-child th {
+            top: 0;
+            z-index: 10;
+        }
+        #compareTable thead tr:nth-child(2) th {
+            top: 84px; /* Overlaps the 85px header by 1px to create a perfect seal */
+            z-index: 9;
+            box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1); /* Adds depth over scrolling data */
+        }
+
         .player-header {
+            box-sizing: border-box; /* Ensures the height is exactly 85px including borders */
             position: relative;
             font-size: 20px !important;
             height: 85px; 
@@ -196,7 +222,6 @@
             text-align: center;
             overflow: hidden;
             background-color: #ffffff !important; 
-            border-bottom: 2px solid var(--border);
         }
 
         .player-header span {
@@ -261,17 +286,18 @@
                         <th rowspan="2" class="top-header">Remove</th>
                     </tr>
                     <tr>
+                        <!-- Updated xGP to xG% -->
                         <th class="recent-group">GP</th><th class="recent-group">G</th><th class="recent-group">A</th><th class="recent-group">PTS</th>
                         <th class="recent-group">ATOI</th><th class="recent-group">Shots/60</th><th class="recent-group">iCF/60</th>
                         <th class="recent-group">iSCF/60</th><th class="recent-group">ixG/60</th><th class="recent-group">CF/60</th>
-                        <th class="recent-group">SCF/60</th><th class="recent-group">xG/60</th><th class="recent-group">xGP</th>
+                        <th class="recent-group">SCF/60</th><th class="recent-group">xG/60</th><th class="recent-group">xG%</th>
                         <th class="recent-group">IPP</th><th class="recent-group">S%</th><th class="recent-group">oiSH%</th>
                         
                         <th class="season-group">GP</th><th class="season-group">G</th><th class="season-group">A</th><th class="season-group">PTS</th>
                         <th class="season-group">82G</th><th class="season-group">82PTS</th><th class="season-group">ATOI</th>
                         <th class="season-group">Shots/60</th><th class="season-group">iCF/60</th><th class="season-group">iSCF/60</th>
                         <th class="season-group">ixG/60</th><th class="season-group">CF/60</th><th class="season-group">SCF/60</th>
-                        <th class="season-group">xG/60</th><th class="season-group">xGP</th><th class="season-group">IPP</th>
+                        <th class="season-group">xG/60</th><th class="season-group">xG%</th><th class="season-group">IPP</th>
                         <th class="season-group">S%</th><th class="season-group">oiSH%</th>
                     </tr>
                 </thead>
@@ -285,7 +311,6 @@
     <!-- ============================================== -->
     <div id="compareTab" class="tab-content">
         <div class="compare-grid">
-            <!-- Center Aligned Controls for Comparison Tab -->
             <div class="controls" style="justify-content: center;">
                 <input type="text" id="p1Search" list="playerList" placeholder="Select Player 1...">
                 <span style="font-weight:bold; color:var(--primary);">VS</span>
@@ -328,6 +353,8 @@
 
         const fmt = (val, dec=2) => (typeof val === 'number') ? val.toFixed(dec) : (val || '-');
         const rnk = (val) => val ? val : '-';
+        // 3) New formatter for xG% to display XX.XX format
+        const pct = (val) => (typeof val === 'number') ? (val * 100).toFixed(2) : '-';
 
         function switchTab(tabId, btnElement) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -353,7 +380,7 @@
                 seasonData.forEach(row => { if(row.skater) fullDatabase[row.skater] = { season: row, recent: null, team: null }; });
                 recentData.forEach(row => { if(row.skater && fullDatabase[row.skater]) fullDatabase[row.skater].recent = row; });
                 
-                // Add Team info from new data_validation sheet
+                // Add Team info from data_validation sheet
                 skatersData.forEach(row => { 
                     if(row.skater && fullDatabase[row.skater]) {
                         fullDatabase[row.skater].team = row.team; 
@@ -378,7 +405,6 @@
                 datalist.appendChild(option);
             });
 
-            // --- USE FULL SEASON STATS FOR INITIALIZATION ---
             let seasonSkaters = Object.values(fullDatabase)
                 .filter(d => d.season && d.season.position)
                 .map(d => {
@@ -435,14 +461,14 @@
                     <td>${fmt(r.gp, 0)}</td><td>${fmt(r.goals, 0)}</td><td>${fmt(r.assists, 0)}</td><td>${fmt(r.points, 0)}</td>
                     <td>${fmt(r.toi_gp)}</td><td>${rnk(r.i_shots_60_rank)}</td><td>${rnk(r.i_cf_60_rank)}</td>
                     <td>${rnk(r.i_scf_60_rank)}</td><td>${rnk(r.i_xg_adjusted_60_rank)}</td><td>${rnk(r.oi_cf_60_rank)}</td>
-                    <td>${rnk(r.oi_scf_60_rank)}</td><td>${rnk(r.oi_xg_adjusted_60_rank)}</td><td>${fmt(r.skt_xg_adjusted_percent, 4)}</td>
+                    <td>${rnk(r.oi_scf_60_rank)}</td><td>${rnk(r.oi_xg_adjusted_60_rank)}</td><td>${pct(r.skt_xg_adjusted_percent)}</td>
                     <td>${fmt(r.ipp)}</td><td>${fmt(r.sh_percent)}</td><td>${fmt(r.oi_sh_percent)}</td>
                     
                     <td>${fmt(s.gp, 0)}</td><td>${fmt(s.goals, 0)}</td><td>${fmt(s.assists, 0)}</td><td>${fmt(s.points, 0)}</td>
                     <td>${fmt(s.goals_82, 0)}</td><td>${fmt(s.points_82, 0)}</td><td>${fmt(s.toi_gp)}</td>
                     <td>${rnk(s.i_shots_60_rank)}</td><td>${rnk(s.i_cf_60_rank)}</td><td>${rnk(s.i_scf_60_rank)}</td>
                     <td>${rnk(s.i_xg_adjusted_60_rank)}</td><td>${rnk(s.oi_cf_60_rank)}</td><td>${rnk(s.oi_scf_60_rank)}</td>
-                    <td>${rnk(s.oi_xg_adjusted_60_rank)}</td><td>${fmt(s.skt_xg_adjusted_percent, 4)}</td><td>${fmt(s.ipp)}</td>
+                    <td>${rnk(s.oi_xg_adjusted_60_rank)}</td><td>${pct(s.skt_xg_adjusted_percent)}</td><td>${fmt(s.ipp)}</td>
                     <td>${fmt(s.sh_percent)}</td><td>${fmt(s.oi_sh_percent)}</td>
                     <td><button class="remove-btn" onclick="removePlayer('${playerName}')">X</button></td>
                 `;
@@ -510,7 +536,7 @@
                 { label: "IPP", k: "ipp", f: (v) => fmt(v, 2) },
                 { label: "SH%", k: "sh_percent", f: (v) => fmt(v, 2) },
                 { label: "oiSH%", k: "oi_sh_percent", f: (v) => fmt(v, 2) },
-                { label: "xGP", k: "skt_xg_adjusted_percent", f: (v) => fmt(v, 4) },
+                { label: "xG%", k: "skt_xg_adjusted_percent", f: pct },
                 { label: "Shots/60 Rank", k: "i_shots_60_rank", f: rnk },
                 { label: "iCF/60 Rank", k: "i_cf_60_rank", f: rnk },
                 { label: "iSCF/60 Rank", k: "i_scf_60_rank", f: rnk },
