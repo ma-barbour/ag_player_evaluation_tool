@@ -16,31 +16,75 @@
             --text-main: #1e293b;
             --border: #d1d5db;
             --header-text: #ffffff;
+            
+            /* A&G Brand Colors */
+            --ag-green: #0c3026;
+            --ag-slate: #cbd5e1;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-main);
             color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
 
-        .header-container {
+        /* --- A&G BRANDED MAIN HEADER --- */
+        .main-header {
+            background-color: var(--ag-green);
+            padding: 16px 20px;
+            border-bottom: 4px solid var(--ag-slate);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .main-header img {
+            height: 64px;
+            width: auto;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-header h1 {
+            color: #ffffff;
+            margin: 0 0 4px 0;
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            line-height: 1;
+        }
+
+        .main-header h2 {
+            color: var(--ag-slate);
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        @media (min-width: 768px) {
+            .main-header { padding: 24px 20px; }
+            .main-header img { height: 80px; }
+            .main-header h1 { font-size: 1.5rem; }
+            .main-header h2 { font-size: 1.25rem; }
+        }
+
+        /* --- UTILITY CONTAINERS --- */
+        .controls-container {
             max-width: 95%;
             margin: 0 auto 20px auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: var(--primary);
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         /* --- TAB SYSTEM CSS --- */
@@ -96,7 +140,7 @@
 
         /* Dashboard Tables */
         .dashboard {
-            max-width: 95%; margin: 0 auto;
+            max-width: 95%; margin: 0 auto 20px auto;
             background: var(--surface); border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
             overflow-x: auto; max-height: 75vh;
@@ -135,7 +179,7 @@
         .remove-btn { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px; font-weight: bold; }
         .remove-btn:hover { color: #991b1b; }
         
-        #loadingMsg { text-align: center; padding: 20px; font-weight: bold; color: var(--primary); }
+        #loadingMsg { text-align: center; padding: 40px; font-weight: bold; color: var(--primary); font-size: 18px; }
 
         /* Compare Tab Specifics */
         .compare-grid { max-width: 95%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
@@ -147,7 +191,7 @@
             position: relative;
             font-size: 20px !important;
             height: 85px; 
-            padding: 0 20px !important; /* Added 20px buffer on left and right */
+            padding: 0 20px !important; 
             vertical-align: middle;
             text-align: center;
             overflow: hidden;
@@ -161,7 +205,7 @@
             color: #0f172a; 
             font-weight: 900;
             text-shadow: 0px 0px 8px rgba(255, 255, 255, 1), 0px 0px 12px rgba(255, 255, 255, 0.8), 1px 1px 0px #ffffff, -1px -1px 0px #ffffff;
-            display: inline-block; /* Ensures padding scales cleanly if name wraps */
+            display: inline-block; 
         }
 
         .header-bg {
@@ -177,8 +221,13 @@
 </head>
 <body>
 
-    <div class="header-container">
-        <h1>A&G Player Evaluation Tool</h1>
+    <!-- A&G Branded Header -->
+    <div class="main-header">
+        <img src="logo.jpg" alt="Apples & Ginos Logo">
+        <div class="title-group">
+            <h1>A&G Player Evaluation Tool</h1>
+            <h2>Data By 18 Skaters</h2>
+        </div>
     </div>
 
     <!-- TAB NAVIGATION -->
@@ -187,13 +236,13 @@
         <button class="tab-btn" onclick="switchTab('compareTab', this)">Player Comparison</button>
     </div>
 
-    <div id="loadingMsg">Loading live data from Google Sheets...</div>
+    <div id="loadingMsg">Fetching live data from Google Sheets...</div>
 
     <!-- ============================================== -->
     <!-- TAB 1: PLAYER EVALUATION                       -->
     <!-- ============================================== -->
     <div id="evalTab" class="tab-content active">
-        <div class="header-container" style="padding-top:0;">
+        <div class="controls-container">
             <div class="controls">
                 <input type="text" id="playerSearch" list="playerList" placeholder="Search and add a player...">
                 <datalist id="playerList"></datalist>
@@ -236,7 +285,8 @@
     <!-- ============================================== -->
     <div id="compareTab" class="tab-content">
         <div class="compare-grid">
-            <div class="controls">
+            <!-- Center Aligned Controls for Comparison Tab -->
+            <div class="controls" style="justify-content: center;">
                 <input type="text" id="p1Search" list="playerList" placeholder="Select Player 1...">
                 <span style="font-weight:bold; color:var(--primary);">VS</span>
                 <input type="text" id="p2Search" list="playerList" placeholder="Select Player 2...">
@@ -268,7 +318,6 @@
     </div>
 
     <script>
-        // Updated Sheet ID and exact tab names from the new raw data source
         const sheetId = "1FxlF_jSAyqgHbhx7SoD5ha5LxkJCssYx-spycz6Ev2A";
         const seasonCSVUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=full_season`; 
         const recentCSVUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=five_gp`;
@@ -321,13 +370,46 @@
             document.getElementById('loadingMsg').style.display = 'none';
             
             const datalist = document.getElementById('playerList');
-            Object.keys(fullDatabase).sort().forEach(player => {
+            const allPlayers = Object.keys(fullDatabase).sort();
+            
+            allPlayers.forEach(player => {
                 const option = document.createElement('option');
                 option.value = player;
                 datalist.appendChild(option);
             });
 
+            // --- USE FULL SEASON STATS FOR INITIALIZATION ---
+            let seasonSkaters = Object.values(fullDatabase)
+                .filter(d => d.season && d.season.position)
+                .map(d => {
+                    let rnkStr = d.season.i_xg_adjusted_60_rank;
+                    let rnkNum = parseInt(rnkStr, 10);
+                    
+                    if (isNaN(rnkNum)) {
+                        rnkNum = 9999;
+                    }
+                    
+                    return {
+                        name: d.season.skater,
+                        pos: d.season.position.trim().toUpperCase(),
+                        rank: rnkNum
+                    };
+                });
+
+            // Filter Top 5 Forwards and Top 5 Defenders
+            let topF = seasonSkaters.filter(p => p.pos === 'F').sort((a,b) => a.rank - b.rank).slice(0, 5);
+            let topD = seasonSkaters.filter(p => p.pos === 'D').sort((a,b) => a.rank - b.rank).slice(0, 5);
+            
+            // Push to Evaluation Dashboard
+            selectedPlayers = [...topF, ...topD].map(p => p.name);
             renderDashboard();
+
+            // Push Top 2 Forwards to Comparison Tab
+            if (topF.length >= 2) {
+                document.getElementById('p1Search').value = topF[0].name;
+                document.getElementById('p2Search').value = topF[1].name;
+                renderComparison(); 
+            }
         }
 
         // --- EVALUATION TAB ---
@@ -371,7 +453,7 @@
         function addPlayer() {
             const val = document.getElementById('playerSearch').value.trim();
             if(val && fullDatabase[val] && !selectedPlayers.includes(val)) {
-                selectedPlayers.push(val);
+                selectedPlayers.unshift(val);
                 document.getElementById('playerSearch').value = '';
                 renderDashboard();
             }
