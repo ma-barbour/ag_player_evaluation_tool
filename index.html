@@ -71,6 +71,15 @@
             line-height: 1.2;
         }
 
+        /* New Updated Label Styling */
+        .main-header h3 {
+            color: var(--ag-slate);
+            margin: 4px 0 0 0;
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
         @media (min-width: 768px) {
             .main-header { padding: 24px 20px; }
             .main-header img { height: 80px; }
@@ -169,7 +178,7 @@
         .recent-group { background-color: #334155 !important; color: #ffffff !important; }
         .season-group { background-color: #cbd5e1 !important; color: #0f172a !important; }
 
-        /* 1) Remove ALL internal grid lines within headers for a cleaner look */
+        /* Remove ALL internal grid lines within headers for a cleaner look */
         #outputTable thead th, #compareTable thead th {
             border-right: none !important;
             border-bottom: none !important;
@@ -196,24 +205,32 @@
         #loadingMsg { text-align: center; padding: 40px; font-weight: bold; color: var(--primary); font-size: 18px; }
 
         /* Compare Tab Specifics */
-        .compare-grid { max-width: 95%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .compare-grid { max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* SYMMETRY FIX: Forces exactly equal column spacing regardless of name lengths */
+        #compareTable { table-layout: fixed; width: 100%; }
+        #compareTable thead tr:nth-child(2) th { width: 20%; }
+
         #compareTable th { background-color: var(--primary); color: white; position: sticky; top: 0; }
         #compareTable th.stat-col { background-color: #cbd5e1; color: #0f172a; font-weight: 800; font-size: 14px; }
         #compareTable td.stat-name { font-weight: bold; background-color: #e2e8f0 !important; color: #0f172a; text-transform: uppercase; font-size: 12px; }
         
-        /* 2) Fix sticky headers on Compare tab to eliminate the data scroll gap */
+        /* Make all data in the comparison table bold */
+        #compareTable tbody td { font-weight: 700; }
+        
+        /* Fix sticky headers on Compare tab to eliminate the data scroll gap */
         #compareTable thead tr:first-child th {
             top: 0;
             z-index: 10;
         }
         #compareTable thead tr:nth-child(2) th {
-            top: 84px; /* Overlaps the 85px header by 1px to create a perfect seal */
+            top: 84px; 
             z-index: 9;
-            box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1); /* Adds depth over scrolling data */
+            box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1); 
         }
 
         .player-header {
-            box-sizing: border-box; /* Ensures the height is exactly 85px including borders */
+            box-sizing: border-box; 
             position: relative;
             font-size: 20px !important;
             height: 85px; 
@@ -241,6 +258,7 @@
             background-repeat: no-repeat;
             opacity: 0.25; 
             z-index: 1;
+            transform: scale(1.35); 
         }
     </style>
 </head>
@@ -252,6 +270,7 @@
         <div class="title-group">
             <h1>A&G Player Evaluation Tool</h1>
             <h2>Data By 18 Skaters</h2>
+            <h3 id="updateDateLabel"></h3> <!-- Dynamic Updated Label -->
         </div>
     </div>
 
@@ -286,7 +305,6 @@
                         <th rowspan="2" class="top-header">Remove</th>
                     </tr>
                     <tr>
-                        <!-- Updated xGP to xG% -->
                         <th class="recent-group">GP</th><th class="recent-group">G</th><th class="recent-group">A</th><th class="recent-group">PTS</th>
                         <th class="recent-group">ATOI</th><th class="recent-group">Shots/60</th><th class="recent-group">iCF/60</th>
                         <th class="recent-group">iSCF/60</th><th class="recent-group">ixG/60</th><th class="recent-group">CF/60</th>
@@ -294,7 +312,10 @@
                         <th class="recent-group">IPP</th><th class="recent-group">S%</th><th class="recent-group">oiSH%</th>
                         
                         <th class="season-group">GP</th><th class="season-group">G</th><th class="season-group">A</th><th class="season-group">PTS</th>
-                        <th class="season-group">82G</th><th class="season-group">82PTS</th><th class="season-group">ATOI</th>
+                        <!-- Dynamic Pacing Headers -->
+                        <th class="season-group" id="th_pace_g">82G</th>
+                        <th class="season-group" id="th_pace_pts">82PTS</th>
+                        <th class="season-group">ATOI</th>
                         <th class="season-group">Shots/60</th><th class="season-group">iCF/60</th><th class="season-group">iSCF/60</th>
                         <th class="season-group">ixG/60</th><th class="season-group">CF/60</th><th class="season-group">SCF/60</th>
                         <th class="season-group">xG/60</th><th class="season-group">xG%</th><th class="season-group">IPP</th>
@@ -318,7 +339,7 @@
                 <button onclick="renderComparison()">Compare Stats</button>
             </div>
 
-            <div class="dashboard">
+            <div class="dashboard" style="max-height: none; overflow-y: visible;">
                 <table id="compareTable">
                     <thead>
                         <tr>
@@ -350,10 +371,10 @@
 
         let fullDatabase = {};
         let selectedPlayers = []; 
+        let paceKeyPrefix = '82'; // Defaults to 82, dynamically updates based on raw data columns
 
         const fmt = (val, dec=2) => (typeof val === 'number') ? val.toFixed(dec) : (val || '-');
         const rnk = (val) => val ? val : '-';
-        // 3) New formatter for xG% to display XX.XX format
         const pct = (val) => (typeof val === 'number') ? (val * 100).toFixed(2) : '-';
 
         function switchTab(tabId, btnElement) {
@@ -376,6 +397,22 @@
                 const recentData = Papa.parse(await recentResponse.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
                 const skatersData = Papa.parse(await skatersResponse.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
 
+                // --- ADAPTIVE PACING & DATE EXTRACTION ---
+                if (seasonData.length > 0) {
+                    // Extract Date
+                    const updateDate = seasonData[0].updated;
+                    if (updateDate) {
+                        document.getElementById('updateDateLabel').innerText = `Updated: ${updateDate}`;
+                    }
+                    
+                    // Scan columns to figure out if it's an 82 or 84 game season 
+                    const keys = Object.keys(seasonData[0]);
+                    const goalsKey = keys.find(k => k.startsWith('goals_') && k !== 'goals');
+                    if (goalsKey) {
+                        paceKeyPrefix = goalsKey.split('_')[1]; // Pulls '82' or '84' out of 'goals_82'
+                    }
+                }
+
                 // Build Base Data
                 seasonData.forEach(row => { if(row.skater) fullDatabase[row.skater] = { season: row, recent: null, team: null }; });
                 recentData.forEach(row => { if(row.skater && fullDatabase[row.skater]) fullDatabase[row.skater].recent = row; });
@@ -395,6 +432,10 @@
 
         function initializeApp() {
             document.getElementById('loadingMsg').style.display = 'none';
+            
+            // Inject dynamic pace numbers into HTML headers
+            document.getElementById('th_pace_g').innerText = `${paceKeyPrefix}G`;
+            document.getElementById('th_pace_pts').innerText = `${paceKeyPrefix}PTS`;
             
             const datalist = document.getElementById('playerList');
             const allPlayers = Object.keys(fullDatabase).sort();
@@ -465,7 +506,9 @@
                     <td>${fmt(r.ipp)}</td><td>${fmt(r.sh_percent)}</td><td>${fmt(r.oi_sh_percent)}</td>
                     
                     <td>${fmt(s.gp, 0)}</td><td>${fmt(s.goals, 0)}</td><td>${fmt(s.assists, 0)}</td><td>${fmt(s.points, 0)}</td>
-                    <td>${fmt(s.goals_82, 0)}</td><td>${fmt(s.points_82, 0)}</td><td>${fmt(s.toi_gp)}</td>
+                    <!-- Pulls the dynamic pace data -->
+                    <td>${fmt(s['goals_' + paceKeyPrefix], 0)}</td><td>${fmt(s['points_' + paceKeyPrefix], 0)}</td>
+                    <td>${fmt(s.toi_gp)}</td>
                     <td>${rnk(s.i_shots_60_rank)}</td><td>${rnk(s.i_cf_60_rank)}</td><td>${rnk(s.i_scf_60_rank)}</td>
                     <td>${rnk(s.i_xg_adjusted_60_rank)}</td><td>${rnk(s.oi_cf_60_rank)}</td><td>${rnk(s.oi_scf_60_rank)}</td>
                     <td>${rnk(s.oi_xg_adjusted_60_rank)}</td><td>${pct(s.skt_xg_adjusted_percent)}</td><td>${fmt(s.ipp)}</td>
@@ -527,11 +570,14 @@
             const p2_s = fullDatabase[p2Name].season || {};
             const p2_r = fullDatabase[p2Name].recent || {};
 
+            // Added Pace data strictly to the season keys mapping
             const statsToCompare = [
                 { label: "Games Played", k: "gp", f: (v) => fmt(v, 0) },
                 { label: "Goals", k: "goals", f: (v) => fmt(v, 0) },
                 { label: "Assists", k: "assists", f: (v) => fmt(v, 0) },
                 { label: "Points", k: "points", f: (v) => fmt(v, 0) },
+                { label: `${paceKeyPrefix}G Pace`, k_s: `goals_${paceKeyPrefix}`, f: (v) => fmt(v, 0) },
+                { label: `${paceKeyPrefix}PTS Pace`, k_s: `points_${paceKeyPrefix}`, f: (v) => fmt(v, 0) },
                 { label: "Average TOI", k: "toi_gp", f: (v) => fmt(v, 2) },
                 { label: "IPP", k: "ipp", f: (v) => fmt(v, 2) },
                 { label: "SH%", k: "sh_percent", f: (v) => fmt(v, 2) },
@@ -550,12 +596,19 @@
 
             statsToCompare.forEach(stat => {
                 const row = document.createElement('tr');
+                
+                // If a stat uses a season-specific key (k_s) like pace, block it from the Last 5 Games side ('-')
+                let p1_recent = stat.k ? stat.f(p1_r[stat.k]) : '-';
+                let p1_season = stat.k_s ? stat.f(p1_s[stat.k_s]) : stat.f(p1_s[stat.k]);
+                let p2_season = stat.k_s ? stat.f(p2_s[stat.k_s]) : stat.f(p2_s[stat.k]);
+                let p2_recent = stat.k ? stat.f(p2_r[stat.k]) : '-';
+
                 row.innerHTML = `
-                    <td>${stat.f(p1_r[stat.k])}</td>
-                    <td>${stat.f(p1_s[stat.k])}</td>
+                    <td>${p1_recent}</td>
+                    <td>${p1_season}</td>
                     <td class="stat-name">${stat.label}</td>
-                    <td>${stat.f(p2_s[stat.k])}</td>
-                    <td>${stat.f(p2_r[stat.k])}</td>
+                    <td>${p2_season}</td>
+                    <td>${p2_recent}</td>
                 `;
                 tbody.appendChild(row);
             });
