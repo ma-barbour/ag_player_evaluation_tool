@@ -22,16 +22,21 @@
             --ag-slate: #cbd5e1;
         }
 
+        /* Ensure padding and borders don't increase element width on mobile */
+        * { box-sizing: border-box; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-main);
             color: var(--text-main);
             margin: 0;
             padding: 0;
+            overflow-x: hidden; 
         }
 
         /* --- A&G BRANDED MAIN HEADER --- */
         .main-header {
+            width: 100%;
             background-color: var(--ag-green);
             padding: 16px 20px;
             border-bottom: 4px solid var(--ag-slate);
@@ -71,7 +76,6 @@
             line-height: 1.2;
         }
 
-        /* New Updated Label Styling */
         .main-header h3 {
             color: var(--ag-slate);
             margin: 4px 0 0 0;
@@ -89,21 +93,22 @@
 
         /* --- UTILITY CONTAINERS --- */
         .controls-container {
+            width: 100%;
             max-width: 95%;
             margin: 0 auto 20px auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         /* --- TAB SYSTEM CSS --- */
         .tabs {
+            width: 100%;
             max-width: 95%;
             margin: 0 auto 20px auto;
             display: flex;
             gap: 10px;
             border-bottom: 2px solid var(--border);
             padding-bottom: 10px;
+            overflow-x: auto; 
+            white-space: nowrap;
         }
 
         .tab-btn {
@@ -130,11 +135,20 @@
         .tab-content.active { display: block; }
 
         /* Controls / Search bars */
-        .controls { display: flex; gap: 10px; align-items: center; }
+        .controls { 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            flex-wrap: wrap; 
+        }
         
         input[type="text"] {
-            padding: 10px; width: 300px;
-            border: 1px solid var(--border); border-radius: 6px;
+            padding: 10px; 
+            flex: 1; 
+            min-width: 140px; 
+            max-width: 300px;
+            border: 1px solid var(--border); 
+            border-radius: 6px;
             font-size: 14px;
         }
 
@@ -142,6 +156,7 @@
             padding: 10px 16px; background-color: var(--accent);
             color: white; border: none; border-radius: 6px;
             cursor: pointer; font-weight: 600;
+            white-space: nowrap;
         }
         button:hover { background-color: var(--accent-hover); }
         .btn-clear { background-color: #ef4444; }
@@ -149,45 +164,73 @@
 
         /* Dashboard Tables */
         .dashboard {
-            max-width: 95%; margin: 0 auto 20px auto;
-            background: var(--surface); border-radius: 12px;
+            width: 100%;
+            max-width: 95%; 
+            margin: 0 auto 20px auto;
+            background: var(--surface); 
+            border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            overflow-x: auto; max-height: 75vh;
+            overflow-x: auto; 
+            overflow-y: auto; /* Activates vertical scrolling for all standard tables */
+            max-height: 75vh; /* Bounds the height so the table scrolls internally */
             border: 1px solid var(--border);
         }
 
         table { border-collapse: collapse; white-space: nowrap; font-size: 13px; width: 100%; }
         th, td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
         
-        /* Sticky First Column */
-        #outputTable th:first-child, #outputTable td:first-child {
+        /* Ensure ALL data cells are bold by default */
+        tbody td { font-weight: 700; }
+        
+        /* Exclude FAQ table from the bold rule for readability */
+        .faq-table tbody td { font-weight: 400; }
+
+        /* Sticky Left Column rules applied to all datatables */
+        #outputTable th:first-child, #outputTable td:first-child,
+        #teamOiXgTable th:first-child, #teamOiXgTable td:first-child,
+        #customOiXgTable th:first-child, #customOiXgTable td:first-child {
             text-align: left; position: sticky; left: 0; z-index: 3;
             font-weight: bold; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
         }
 
-        .top-header { background-color: var(--primary); color: var(--header-text); position: sticky; top: 0; z-index: 2; }
+        /* Set an explicit height for the top header so sub-headers can anchor perfectly below it */
+        .top-header { background-color: var(--primary); color: var(--header-text); position: sticky; top: 0; z-index: 5 !important; height: 38px; box-sizing: border-box; }
         
-        #outputTable th:first-child.top-header { background-color: #1e293b; z-index: 4; }
-        #outputTable th:last-child.top-header { background-color: #dc2626; z-index: 4; }
+        /* Set specific header colors for 5v5 Tables (#334155) */
+        #teamOiXgTable th.top-header,
+        #customOiXgTable th.top-header { background-color: #334155; }
+
+        /* Corners must sit above both the scrolling data AND the scrolling sub-headers */
+        #outputTable th:first-child.top-header,
+        #teamOiXgTable th:first-child.top-header,
+        #customOiXgTable th:first-child.top-header { background-color: #1e293b; z-index: 6 !important; }
+
+        #outputTable th:last-child.top-header,
+        #customOiXgTable th:last-child.top-header { background-color: #dc2626; z-index: 6 !important; }
 
         .group-header {
             text-align: center !important; font-weight: 700; font-size: 14px;
-            text-transform: uppercase; position: sticky; top: 0; z-index: 2;
+            text-transform: uppercase; position: sticky; top: 0; z-index: 5 !important; height: 38px; box-sizing: border-box;
         }
         
         .recent-group { background-color: #334155 !important; color: #ffffff !important; }
         .season-group { background-color: #cbd5e1 !important; color: #0f172a !important; }
 
-        /* Remove ALL internal grid lines within headers for a cleaner look */
-        #outputTable thead th, #compareTable thead th {
-            border-right: none !important;
-            border-bottom: none !important;
+        /* Evaluation Tab Vertical Sticky Header Fix */
+        #outputTable thead tr:nth-child(2) th {
+            position: sticky;
+            top: 38px; /* Tucks directly underneath the 38px top-header */
+            z-index: 4;
+            box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1);
         }
-        /* Add one solid line beneath the entire header block */
-        #outputTable thead, #compareTable thead {
+
+        /* Remove internal grid lines within headers */
+        #outputTable thead th, #compareTable thead th, #teamOiXgTable thead th, #customOiXgTable thead th {
+            border-right: none !important; border-bottom: none !important;
+        }
+        #outputTable thead, #compareTable thead, #teamOiXgTable thead, #customOiXgTable thead {
             border-bottom: 2px solid var(--border);
         }
-        /* Ensure the player header keeps its bottom border for separation */
         #compareTable th.player-header {
             border-bottom: 2px solid var(--border) !important;
         }
@@ -196,8 +239,28 @@
         tbody tr:nth-child(odd) td { background-color: #ffffff; }
         tbody tr:nth-child(even) td { background-color: #f1f5f9; }
         
-        #outputTable tbody tr:nth-child(odd) td:first-child { background-color: #ffffff; }
-        #outputTable tbody tr:nth-child(even) td:first-child { background-color: #f1f5f9; }
+        #outputTable tbody tr:nth-child(odd) td:first-child,
+        #teamOiXgTable tbody tr:nth-child(odd) td:first-child,
+        #customOiXgTable tbody tr:nth-child(odd) td:first-child { background-color: #ffffff; }
+
+        #outputTable tbody tr:nth-child(even) td:first-child,
+        #teamOiXgTable tbody tr:nth-child(even) td:first-child,
+        #customOiXgTable tbody tr:nth-child(even) td:first-child { background-color: #f1f5f9; }
+
+        /* 5v5 Position Sub-headers - Converted to Sticky */
+        .subheader-row td {
+            position: sticky !important;
+            top: 38px; /* Anchors exactly below the top header */
+            left: 0;
+            z-index: 4 !important; /* Floats above data, slides under the corner headers */
+            text-align: center !important;
+            background-color: #e2e8f0 !important;
+            color: #0f172a !important;
+            font-weight: 800 !important;
+            letter-spacing: 2px !important;
+            box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1) !important;
+            border-bottom: 2px solid #cbd5e1 !important;
+        }
 
         .remove-btn { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px; font-weight: bold; }
         .remove-btn:hover { color: #991b1b; }
@@ -205,29 +268,17 @@
         #loadingMsg { text-align: center; padding: 40px; font-weight: bold; color: var(--primary); font-size: 18px; }
 
         /* Compare Tab Specifics */
-        .compare-grid { max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .compare-grid { width: 100%; max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
         
-        /* SYMMETRY FIX: Forces exactly equal column spacing regardless of name lengths */
-        #compareTable { table-layout: fixed; width: 100%; }
+        #compareTable { table-layout: fixed; width: 100%; min-width: 600px; }
         #compareTable thead tr:nth-child(2) th { width: 20%; }
 
         #compareTable th { background-color: var(--primary); color: white; position: sticky; top: 0; }
         #compareTable th.stat-col { background-color: #cbd5e1; color: #0f172a; font-weight: 800; font-size: 14px; }
         #compareTable td.stat-name { font-weight: bold; background-color: #e2e8f0 !important; color: #0f172a; text-transform: uppercase; font-size: 12px; }
         
-        /* Make all data in the comparison table bold */
-        #compareTable tbody td { font-weight: 700; }
-        
-        /* Fix sticky headers on Compare tab to eliminate the data scroll gap */
-        #compareTable thead tr:first-child th {
-            top: 0;
-            z-index: 10;
-        }
-        #compareTable thead tr:nth-child(2) th {
-            top: 84px; 
-            z-index: 9;
-            box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1); 
-        }
+        #compareTable thead tr:first-child th { top: 0; z-index: 10; height: 85px; }
+        #compareTable thead tr:nth-child(2) th { top: 85px; z-index: 9; box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1); }
 
         .player-header {
             box-sizing: border-box; 
@@ -260,6 +311,53 @@
             z-index: 1;
             transform: scale(1.35); 
         }
+
+        /* FAQ Specific CSS */
+        .faq-container {
+            width: 100%;
+            max-width: 95%;
+            margin: 0 auto 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .faq-container h3 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+
+        .faq-container h4 {
+            color: #0f172a;
+            margin: 30px 0 15px 0;
+            font-size: 1.15rem;
+        }
+
+        .faq-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .faq-table th, .faq-table td {
+            text-align: left;
+            padding: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .faq-table th { background-color: #f1f5f9; color: #0f172a; width: 150px; font-weight: 700; }
+        .faq-table td { background-color: #ffffff; }
+
+        .faq-list li { margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -270,14 +368,16 @@
         <div class="title-group">
             <h1>A&G Player Evaluation Tool</h1>
             <h2>Data By 18 Skaters</h2>
-            <h3 id="updateDateLabel"></h3> <!-- Dynamic Updated Label -->
+            <h3 id="updateDateLabel"></h3>
         </div>
     </div>
 
     <!-- TAB NAVIGATION -->
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('evalTab', this)">Player Evaluation</button>
+        <button class="tab-btn" onclick="switchTab('oiXgTab', this)">5v5 xG Data</button>
         <button class="tab-btn" onclick="switchTab('compareTab', this)">Player Comparison</button>
+        <button class="tab-btn" onclick="switchTab('faqTab', this)">Data FAQs</button>
     </div>
 
     <div id="loadingMsg">Fetching live data from Google Sheets...</div>
@@ -312,7 +412,6 @@
                         <th class="recent-group">IPP</th><th class="recent-group">S%</th><th class="recent-group">oiSH%</th>
                         
                         <th class="season-group">GP</th><th class="season-group">G</th><th class="season-group">A</th><th class="season-group">PTS</th>
-                        <!-- Dynamic Pacing Headers -->
                         <th class="season-group" id="th_pace_g">82G</th>
                         <th class="season-group" id="th_pace_pts">82PTS</th>
                         <th class="season-group">ATOI</th>
@@ -328,7 +427,75 @@
     </div>
 
     <!-- ============================================== -->
-    <!-- TAB 2: PLAYER COMPARISON                       -->
+    <!-- TAB 2: 5v5 xG DATA                             -->
+    <!-- ============================================== -->
+    <div id="oiXgTab" class="tab-content">
+        
+        <!-- Team Selection Header -->
+        <div class="controls-container" style="display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
+            <div style="font-weight: 800; font-size: 16px; color: var(--text-main); text-transform: uppercase;">Select NHL Team:</div>
+            <select id="teamSelect" onchange="renderTeamOiXg()" style="padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 14px; font-weight: 600; min-width: 200px;"></select>
+        </div>
+
+        <!-- Dynamic Team Header with Inline Logo -->
+        <div style="max-width: 95%; margin: 0 auto 20px auto; position: relative; height: 85px; background-color: #ffffff; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; border-bottom: 2px solid var(--border);">
+            <div id="teamOiXgTitle" style="display: flex; align-items: center; gap: 15px; position: relative; z-index: 2; color: #0f172a; font-size: 24px; font-weight: 900; letter-spacing: 1px;"></div>
+        </div>
+
+        <div class="dashboard">
+            <table id="teamOiXgTable">
+                <thead>
+                    <tr>
+                        <th class="top-header" style="text-align: left; width: 300px;">Player</th>
+                        <th class="top-header">GP</th>
+                        <th class="top-header">5v5 TOI / GP</th>
+                        <th class="top-header">oixG For</th>
+                        <th class="top-header">oixG Against</th>
+                        <th class="top-header">oixG %</th>
+                        <th class="top-header">oixG For/60</th>
+                        <th class="top-header">oixG Against/60</th>
+                    </tr>
+                </thead>
+                <!-- Tbody tags control the sticky pushing behavior -->
+                <tbody id="teamOiXgBodyF"></tbody>
+                <tbody id="teamOiXgBodyD" style="border-top: 3px solid #1e293b;"></tbody>
+            </table>
+        </div>
+
+        <!-- Custom Player 5v5 Comparison Section -->
+        <div style="max-width: 95%; margin: 40px auto 20px auto; border-top: 2px solid var(--border); padding-top: 30px;">
+            <h2 style="color: #0f172a; margin-bottom: 20px; font-size: 1.5rem; text-transform: uppercase; font-weight: 800;">COMPARE PLAYERS</h2>
+            
+            <div class="controls" style="margin-bottom: 20px;">
+                <input type="text" id="oiXgPlayerSearch" list="oiXgPlayerList" placeholder="Search and add a player...">
+                <datalist id="oiXgPlayerList"></datalist>
+                <button onclick="addOiXgPlayer()">Add Player</button>
+                <button class="btn-clear" onclick="clearOiXgDashboard()">Clear All</button>
+            </div>
+
+            <div class="dashboard">
+                <table id="customOiXgTable">
+                    <thead>
+                        <tr>
+                            <th class="top-header" style="text-align: left; width: 300px;">Player</th>
+                            <th class="top-header">GP</th>
+                            <th class="top-header">5v5 TOI / GP</th>
+                            <th class="top-header">oixG For</th>
+                            <th class="top-header">oixG Against</th>
+                            <th class="top-header">oixG %</th>
+                            <th class="top-header">oixG For/60</th>
+                            <th class="top-header">oixG Against/60</th>
+                            <th class="top-header">Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customOiXgBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: PLAYER COMPARISON                       -->
     <!-- ============================================== -->
     <div id="compareTab" class="tab-content">
         <div class="compare-grid">
@@ -339,7 +506,7 @@
                 <button onclick="renderComparison()">Compare Stats</button>
             </div>
 
-            <div class="dashboard" style="max-height: none; overflow-y: visible;">
+            <div class="dashboard" style="max-height: none; overflow-y: visible; overflow-x: auto;">
                 <table id="compareTable">
                     <thead>
                         <tr>
@@ -363,15 +530,69 @@
         </div>
     </div>
 
+    <!-- ============================================== -->
+    <!-- TAB 4: DATA FAQS                               -->
+    <!-- ============================================== -->
+    <div id="faqTab" class="tab-content">
+        <div class="faq-container">
+            <h3>Data Sources</h3>
+            <div style="margin-bottom: 25px; line-height: 1.8;">
+                <div>Expected goals (xG) data are provided by <strong>18 Skaters</strong> (<a href="https://patreon.com/18skaters" target="_blank" style="color:var(--accent);">patreon.com/18skaters</a>)</div>
+                <div>All other data are sourced from <strong>Natural Stat Trick</strong> (<a href="https://naturalstattrick.com" target="_blank" style="color:var(--accent);">naturalstattrick.com</a>)</div>
+            </div>
+
+            <h3>Data Definitions</h3>
+            <table class="faq-table">
+                <tbody>
+                    <tr><th>GP</th><td>Games played</td></tr>
+                    <tr><th>G</th><td>Goals</td></tr>
+                    <tr><th>A</th><td>Assists</td></tr>
+                    <tr><th>PTS</th><td>Points</td></tr>
+                    <tr><th id="faq_pace_g">82G</th><td id="faq_pace_desc_g">Goals per 82 games played (season-long pace)</td></tr>
+                    <tr><th id="faq_pace_pts">82PTS</th><td id="faq_pace_desc_pts">Points per 82 games played (season-long pace)</td></tr>
+                    <tr><th>ATOI</th><td>Average time-on-ice per game played</td></tr>
+                    <tr><th>Shots/60</th><td>The rank of a skater's shot rate per 60 minutes (F | D ranked separately)</td></tr>
+                    <tr><th>iCF/60</th><td>The rank of a skater's shot attempt (corsi) rate per 60 minutes (F | D ranked separately)</td></tr>
+                    <tr><th>iSCF/60</th><td>The rank of a skater's scoring chance rate per 60 minutes (F | D ranked separately)</td></tr>
+                    <tr><th>ixG/60</th><td>The rank of a skater's expected goal rate per 60 minutes (F | D ranked separately)</td></tr>
+                    <tr><th>CF/60</th><td>The rank of the shot attempt (corsi) rate while the skater is on the ice (F | D ranked separately)</td></tr>
+                    <tr><th>SCF/60</th><td>The rank of the scoring chance rate while the skater is on the ice (F | D ranked separately)</td></tr>
+                    <tr><th>xG/60</th><td>The rank of the expected goal rate while the skater is on the ice (F | D ranked separately)</td></tr>
+                    <tr><th>xG%</th><td>Expected Goals Percentage: a skater's share of the expected goals earned by the skater's team while the skater is on the ice</td></tr>
+                    <tr><th>IPP</th><td>Individual Points Percentage: the percentage of goals a skater's team scores while the skater is on the ice where the skater gets a point</td></tr>
+                    <tr><th>S%</th><td>Shooting Percentage: the percentage of a skater's shots that turn into goals</td></tr>
+                    <tr><th>oiSH%</th><td>On-Ice Shooting Percentage: the shooting percentage of a skater's team while the skater is on the ice</td></tr>
+                    <tr><th>5v5 TOI / GP</th><td>Time-on-ice at 5v5 per game played</td></tr>
+                    <tr><th>oixG For</th><td>Expected goals earned by a skater's team while the skater is on the ice during a given time period</td></tr>
+                    <tr><th>oixG Against</th><td>Expected goals earned by an opponent while the skater is on the ice during a given time period</td></tr>
+                    <tr><th>oixG %</th><td>The share of expected goals earned by the skater's team while the skater is on the ice</td></tr>
+                    <tr><th>oixG For/60</th><td>A skater's oixG For expressed as a rate per 60 minutes</td></tr>
+                    <tr><th>oixG Against/60</th><td>A skater's oixG Against expressed as a rate per 60 minutes</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Note Re: Expected Goals</h3>
+            <p style="margin-bottom: 10px;">Here are a couple of important things to know about the 18 Skaters xG data:</p>
+            <ol class="faq-list">
+                <li>Only a shot-on-goal receives an xG value from the model (other shot attempts are ignored, which is not typical of other xG models).</li>
+                <li>A shot on an empty net (i.e., an empty net goal) does not receive an xG value from the model.</li>
+                <li>The xG values shown here are "adjusted" to reflect shooting talent (a skater with a history of scoring above "expected" gets higher xG values and vice versa).</li>
+            </ol>
+        </div>
+    </div>
+
     <script>
         const sheetId = "1FxlF_jSAyqgHbhx7SoD5ha5LxkJCssYx-spycz6Ev2A";
         const seasonCSVUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=full_season`; 
         const recentCSVUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=five_gp`;
         const skatersCSVUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=data_validation`; 
+        const oiXgCSVUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=five_gp_oi_xg_data`;
 
         let fullDatabase = {};
         let selectedPlayers = []; 
-        let paceKeyPrefix = '82'; // Defaults to 82, dynamically updates based on raw data columns
+        let globalOiXgData = []; 
+        let selectedOiXgPlayers = []; 
+        let paceKeyPrefix = '82'; 
 
         const fmt = (val, dec=2) => (typeof val === 'number') ? val.toFixed(dec) : (val || '-');
         const rnk = (val) => val ? val : '-';
@@ -387,41 +608,45 @@
 
         async function fetchGoogleSheetsData() {
             try {
-                const [seasonResponse, recentResponse, skatersResponse] = await Promise.all([
-                    fetch(seasonCSVUrl), fetch(recentCSVUrl), fetch(skatersCSVUrl)
+                const [seasonResponse, recentResponse, skatersResponse, oiXgResponse] = await Promise.all([
+                    fetch(seasonCSVUrl), fetch(recentCSVUrl), fetch(skatersCSVUrl), fetch(oiXgCSVUrl)
                 ]);
 
-                if (!seasonResponse.ok || !recentResponse.ok || !skatersResponse.ok) throw new Error("Could not fetch data.");
+                if (!seasonResponse.ok || !recentResponse.ok || !skatersResponse.ok || !oiXgResponse.ok) throw new Error("Could not fetch data.");
 
                 const seasonData = Papa.parse(await seasonResponse.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
                 const recentData = Papa.parse(await recentResponse.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
                 const skatersData = Papa.parse(await skatersResponse.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
+                const oiXgData = Papa.parse(await oiXgResponse.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data;
 
                 // --- ADAPTIVE PACING & DATE EXTRACTION ---
                 if (seasonData.length > 0) {
-                    // Extract Date
                     const updateDate = seasonData[0].updated;
                     if (updateDate) {
                         document.getElementById('updateDateLabel').innerText = `Updated: ${updateDate}`;
                     }
                     
-                    // Scan columns to figure out if it's an 82 or 84 game season 
                     const keys = Object.keys(seasonData[0]);
                     const goalsKey = keys.find(k => k.startsWith('goals_') && k !== 'goals');
                     if (goalsKey) {
-                        paceKeyPrefix = goalsKey.split('_')[1]; // Pulls '82' or '84' out of 'goals_82'
+                        paceKeyPrefix = goalsKey.split('_')[1]; 
                     }
                 }
 
-                // Build Base Data
+                // Build Base Data Mapping
                 seasonData.forEach(row => { if(row.skater) fullDatabase[row.skater] = { season: row, recent: null, team: null }; });
                 recentData.forEach(row => { if(row.skater && fullDatabase[row.skater]) fullDatabase[row.skater].recent = row; });
                 
-                // Add Team info from data_validation sheet
                 skatersData.forEach(row => { 
                     if(row.skater && fullDatabase[row.skater]) {
                         fullDatabase[row.skater].team = row.team; 
                     } 
+                });
+
+                // Attach Skater ID to 5v5 Data for Headshot Mugs
+                globalOiXgData = oiXgData.map(row => {
+                    let sId = fullDatabase[row.skater] && fullDatabase[row.skater].season ? fullDatabase[row.skater].season.skater_id : null;
+                    return { ...row, skater_id: sId };
                 });
 
                 initializeApp();
@@ -437,6 +662,12 @@
             document.getElementById('th_pace_g').innerText = `${paceKeyPrefix}G`;
             document.getElementById('th_pace_pts').innerText = `${paceKeyPrefix}PTS`;
             
+            // Inject dynamic pace numbers into FAQ Tab
+            document.getElementById('faq_pace_g').innerText = `${paceKeyPrefix}G`;
+            document.getElementById('faq_pace_pts').innerText = `${paceKeyPrefix}PTS`;
+            document.getElementById('faq_pace_desc_g').innerText = `Goals per ${paceKeyPrefix} games played (season-long pace)`;
+            document.getElementById('faq_pace_desc_pts').innerText = `Points per ${paceKeyPrefix} games played (season-long pace)`;
+            
             const datalist = document.getElementById('playerList');
             const allPlayers = Object.keys(fullDatabase).sort();
             
@@ -446,30 +677,35 @@
                 datalist.appendChild(option);
             });
 
+            // 5v5 Custom Table Datalist
+            const oiXgDatalist = document.getElementById('oiXgPlayerList');
+            const allOiXgPlayers = globalOiXgData.map(d => d.skater).filter(Boolean).sort();
+            allOiXgPlayers.forEach(player => {
+                const option = document.createElement('option');
+                option.value = player;
+                oiXgDatalist.appendChild(option);
+            });
+
             let seasonSkaters = Object.values(fullDatabase)
                 .filter(d => d.season && d.season.position)
                 .map(d => {
                     let rnkStr = d.season.i_xg_adjusted_60_rank;
                     let rnkNum = parseInt(rnkStr, 10);
-                    
-                    if (isNaN(rnkNum)) {
-                        rnkNum = 9999;
-                    }
-                    
-                    return {
-                        name: d.season.skater,
-                        pos: d.season.position.trim().toUpperCase(),
-                        rank: rnkNum
-                    };
+                    if (isNaN(rnkNum)) { rnkNum = 9999; }
+                    return { name: d.season.skater, pos: d.season.position.trim().toUpperCase(), rank: rnkNum };
                 });
 
-            // Filter Top 5 Forwards and Top 5 Defenders
+            // Pre-load logic
             let topF = seasonSkaters.filter(p => p.pos === 'F').sort((a,b) => a.rank - b.rank).slice(0, 5);
             let topD = seasonSkaters.filter(p => p.pos === 'D').sort((a,b) => a.rank - b.rank).slice(0, 5);
             
-            // Push to Evaluation Dashboard
+            // Push to Main Evaluation Dashboard
             selectedPlayers = [...topF, ...topD].map(p => p.name);
             renderDashboard();
+
+            // Push to 5v5 Custom Comparison Dashboard (Mirror selectedPlayers directly)
+            selectedOiXgPlayers = [...selectedPlayers];
+            renderCustomOiXg();
 
             // Push Top 2 Forwards to Comparison Tab
             if (topF.length >= 2) {
@@ -477,9 +713,26 @@
                 document.getElementById('p2Search').value = topF[1].name;
                 renderComparison(); 
             }
+
+            // Populate Team Select for 5v5 xG Tab
+            const allTeams = [...new Set(globalOiXgData.map(d => d.team).filter(Boolean))].sort();
+            const teamSelect = document.getElementById('teamSelect');
+            allTeams.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t;
+                opt.innerText = t;
+                teamSelect.appendChild(opt);
+            });
+
+            if(allTeams.length > 0) {
+                teamSelect.value = allTeams[0];
+                renderTeamOiXg();
+            }
         }
 
-        // --- EVALUATION TAB ---
+        // ==============================================
+        // EVALUATION TAB FUNCTIONS
+        // ==============================================
         function renderDashboard() {
             const tbody = document.getElementById('dashboardBody');
             tbody.innerHTML = '';
@@ -497,8 +750,24 @@
                 const r = data.recent || {};
                 const row = document.createElement('tr');
 
+                let mugshotHtml = '';
+                if (s.skater_id) {
+                    mugshotHtml = `<img src="https://assets.nhle.com/mugs/nhl/latest/${s.skater_id}.png" style="height: 36px; width: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); background-color: #f8fafc; flex-shrink: 0;" onerror="this.style.display='none';">`;
+                }
+                
+                let teamLogoHtml = '';
+                if (data.team) {
+                    teamLogoHtml = `<img src="https://assets.nhle.com/logos/nhl/svg/${data.team}_light.svg" style="height: 48px; width: 48px; object-fit: contain; flex-shrink: 0;" onerror="this.style.display='none';">`;
+                }
+
                 row.innerHTML = `
-                    <td>${playerName}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 4px; min-width: 220px;">
+                            ${teamLogoHtml}
+                            ${mugshotHtml}
+                            <span>${playerName}</span>
+                        </div>
+                    </td>
                     <td>${fmt(r.gp, 0)}</td><td>${fmt(r.goals, 0)}</td><td>${fmt(r.assists, 0)}</td><td>${fmt(r.points, 0)}</td>
                     <td>${fmt(r.toi_gp)}</td><td>${rnk(r.i_shots_60_rank)}</td><td>${rnk(r.i_cf_60_rank)}</td>
                     <td>${rnk(r.i_scf_60_rank)}</td><td>${rnk(r.i_xg_adjusted_60_rank)}</td><td>${rnk(r.oi_cf_60_rank)}</td>
@@ -506,7 +775,6 @@
                     <td>${fmt(r.ipp)}</td><td>${fmt(r.sh_percent)}</td><td>${fmt(r.oi_sh_percent)}</td>
                     
                     <td>${fmt(s.gp, 0)}</td><td>${fmt(s.goals, 0)}</td><td>${fmt(s.assists, 0)}</td><td>${fmt(s.points, 0)}</td>
-                    <!-- Pulls the dynamic pace data -->
                     <td>${fmt(s['goals_' + paceKeyPrefix], 0)}</td><td>${fmt(s['points_' + paceKeyPrefix], 0)}</td>
                     <td>${fmt(s.toi_gp)}</td>
                     <td>${rnk(s.i_shots_60_rank)}</td><td>${rnk(s.i_cf_60_rank)}</td><td>${rnk(s.i_scf_60_rank)}</td>
@@ -542,7 +810,131 @@
             if(e.key === "Enter") { e.preventDefault(); addPlayer(); }
         });
 
-        // --- COMPARISON TAB ---
+        // ==============================================
+        // 5v5 xG DATA TAB FUNCTIONS
+        // ==============================================
+        function renderTeamOiXg() {
+            const team = document.getElementById('teamSelect').value;
+            const titleEl = document.getElementById('teamOiXgTitle');
+            
+            titleEl.innerHTML = `
+                <img src="https://assets.nhle.com/logos/nhl/svg/${team}_light.svg" style="height: 80px; width: 80px; object-fit: contain; opacity: 1;" onerror="this.style.display='none';"> 
+                <span>5v5 xG (Last 5 Games)</span>
+            `;
+            
+            const fBody = document.getElementById('teamOiXgBodyF');
+            const dBody = document.getElementById('teamOiXgBodyD');
+            fBody.innerHTML = '';
+            dBody.innerHTML = '';
+            
+            const teamPlayers = globalOiXgData.filter(d => d.team === team);
+            teamPlayers.sort((a,b) => b.toi_gp_5v5 - a.toi_gp_5v5); 
+            
+            if (teamPlayers.some(p => p.pos === 'F')) {
+                fBody.innerHTML = `<tr class="subheader-row"><td colspan="8">FORWARDS</td></tr>`;
+            }
+            if (teamPlayers.some(p => p.pos === 'D')) {
+                dBody.innerHTML = `<tr class="subheader-row"><td colspan="8">DEFENSEMEN</td></tr>`;
+            }
+            
+            teamPlayers.forEach(p => {
+                const tr = document.createElement('tr');
+                
+                let mugshotHtml = '';
+                if (p.skater_id) {
+                    mugshotHtml = `<img src="https://assets.nhle.com/mugs/nhl/latest/${p.skater_id}.png" style="height: 36px; width: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #cbd5e1; background-color: #f8fafc; flex-shrink: 0;" onerror="this.style.display='none';">`;
+                }
+                
+                tr.innerHTML = `
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            ${mugshotHtml}
+                            <span>${p.skater}</span>
+                        </div>
+                    </td>
+                    <td>${fmt(p.gp, 0)}</td>
+                    <td>${fmt(p.toi_gp_5v5)}</td>
+                    <td>${fmt(p.oi_xg_for)}</td>
+                    <td>${fmt(p.oi_xg_against)}</td>
+                    <td>${pct(p.oi_xg_perc)}</td>
+                    <td>${fmt(p.oi_xg_for_60)}</td>
+                    <td>${fmt(p.oi_xg_against_60)}</td>
+                `;
+                
+                if(p.pos === 'F') { fBody.appendChild(tr); } else { dBody.appendChild(tr); }
+            });
+        }
+
+        function renderCustomOiXg() {
+            const tbody = document.getElementById('customOiXgBody');
+            tbody.innerHTML = '';
+            
+            if(selectedOiXgPlayers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="padding:40px; color:#64748b;">No players selected. Search and add a player above.</td></tr>';
+                return;
+            }
+            
+            selectedOiXgPlayers.forEach(playerName => {
+                const p = globalOiXgData.find(d => d.skater === playerName);
+                if(!p) return; 
+                
+                const tr = document.createElement('tr');
+                let teamLogoHtml = '';
+                if (p.team) {
+                    teamLogoHtml = `<img src="https://assets.nhle.com/logos/nhl/svg/${p.team}_light.svg" style="height: 48px; width: 48px; object-fit: contain; flex-shrink: 0;" onerror="this.style.display='none';">`;
+                }
+                let mugshotHtml = '';
+                if (p.skater_id) {
+                    mugshotHtml = `<img src="https://assets.nhle.com/mugs/nhl/latest/${p.skater_id}.png" style="height: 36px; width: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #cbd5e1; background-color: #f8fafc; flex-shrink: 0;" onerror="this.style.display='none';">`;
+                }
+                
+                tr.innerHTML = `
+                    <td>
+                        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 4px; min-width: 220px;">
+                            ${teamLogoHtml}
+                            ${mugshotHtml}
+                            <span>${p.skater}</span>
+                        </div>
+                    </td>
+                    <td>${fmt(p.gp, 0)}</td>
+                    <td>${fmt(p.toi_gp_5v5)}</td>
+                    <td>${fmt(p.oi_xg_for)}</td>
+                    <td>${fmt(p.oi_xg_against)}</td>
+                    <td>${pct(p.oi_xg_perc)}</td>
+                    <td>${fmt(p.oi_xg_for_60)}</td>
+                    <td>${fmt(p.oi_xg_against_60)}</td>
+                    <td><button class="remove-btn" onclick="removeOiXgPlayer('${playerName}')">X</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addOiXgPlayer() {
+            const val = document.getElementById('oiXgPlayerSearch').value.trim();
+            if(val && globalOiXgData.some(d => d.skater === val) && !selectedOiXgPlayers.includes(val)) {
+                selectedOiXgPlayers.unshift(val);
+                document.getElementById('oiXgPlayerSearch').value = '';
+                renderCustomOiXg();
+            }
+        }
+
+        function removeOiXgPlayer(name) {
+            selectedOiXgPlayers = selectedOiXgPlayers.filter(p => p !== name);
+            renderCustomOiXg();
+        }
+
+        function clearOiXgDashboard() {
+            selectedOiXgPlayers = [];
+            renderCustomOiXg();
+        }
+
+        document.getElementById('oiXgPlayerSearch').addEventListener("keypress", (e) => {
+            if(e.key === "Enter") { e.preventDefault(); addOiXgPlayer(); }
+        });
+
+        // ==============================================
+        // COMPARISON TAB FUNCTIONS
+        // ==============================================
         function renderComparison() {
             const p1Name = document.getElementById('p1Search').value.trim();
             const p2Name = document.getElementById('p2Search').value.trim();
@@ -570,7 +962,6 @@
             const p2_s = fullDatabase[p2Name].season || {};
             const p2_r = fullDatabase[p2Name].recent || {};
 
-            // Added Pace data strictly to the season keys mapping
             const statsToCompare = [
                 { label: "Games Played", k: "gp", f: (v) => fmt(v, 0) },
                 { label: "Goals", k: "goals", f: (v) => fmt(v, 0) },
@@ -583,13 +974,13 @@
                 { label: "SH%", k: "sh_percent", f: (v) => fmt(v, 2) },
                 { label: "oiSH%", k: "oi_sh_percent", f: (v) => fmt(v, 2) },
                 { label: "xG%", k: "skt_xg_adjusted_percent", f: pct },
-                { label: "Shots/60 Rank", k: "i_shots_60_rank", f: rnk },
-                { label: "iCF/60 Rank", k: "i_cf_60_rank", f: rnk },
-                { label: "iSCF/60 Rank", k: "i_scf_60_rank", f: rnk },
-                { label: "ixG/60 Rank", k: "i_xg_adjusted_60_rank", f: rnk },
-                { label: "CF/60 Rank", k: "oi_cf_60_rank", f: rnk },
-                { label: "SCF/60 Rank", k: "oi_scf_60_rank", f: rnk },
-                { label: "xG/60 Rank", k: "oi_xg_adjusted_60_rank", f: rnk }
+                { label: "Shots/60", k: "i_shots_60_rank", f: rnk },
+                { label: "iCF/60", k: "i_cf_60_rank", f: rnk },
+                { label: "iSCF/60", k: "i_scf_60_rank", f: rnk },
+                { label: "ixG/60", k: "i_xg_adjusted_60_rank", f: rnk },
+                { label: "CF/60", k: "oi_cf_60_rank", f: rnk },
+                { label: "SCF/60", k: "oi_scf_60_rank", f: rnk },
+                { label: "xG/60", k: "oi_xg_adjusted_60_rank", f: rnk }
             ];
 
             tbody.innerHTML = '';
@@ -597,7 +988,6 @@
             statsToCompare.forEach(stat => {
                 const row = document.createElement('tr');
                 
-                // If a stat uses a season-specific key (k_s) like pace, block it from the Last 5 Games side ('-')
                 let p1_recent = stat.k ? stat.f(p1_r[stat.k]) : '-';
                 let p1_season = stat.k_s ? stat.f(p1_s[stat.k_s]) : stat.f(p1_s[stat.k]);
                 let p2_season = stat.k_s ? stat.f(p2_s[stat.k_s]) : stat.f(p2_s[stat.k]);
