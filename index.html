@@ -176,14 +176,26 @@
             border: 1px solid var(--border);
         }
 
-        table { border-collapse: collapse; white-space: nowrap; font-size: 13px; width: 100%; }
-        th, td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+        /* --- PERFECT STICKY SCROLLING STRUCTURE --- */
+        table { border-collapse: separate; border-spacing: 0; white-space: nowrap; font-size: 13px; width: 100%; }
         
+        /* Wipe internal headers completely clear to prevent any pixel fraction math issues */
+        thead th, .subheader-row td { border: none !important; }
+        
+        /* Apply data grid lines exclusively to the body */
+        td, th { padding: 10px 8px; text-align: center; }
+        td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background-clip: padding-box; }
+        
+        /* Prevent outer borders from doubling up against the dashboard container box */
+        table th:last-child, table td:last-child { border-right: none !important; }
+        table tbody tr:last-child td { border-bottom: none !important; }
+
         /* Ensure ALL data cells are bold by default */
         tbody td { font-weight: 700; }
         
         /* Exclude FAQ table from the bold rule for readability */
-        .faq-table tbody td { font-weight: 400; }
+        .faq-table tbody td { font-weight: 400; border: 1px solid var(--border); }
+        .faq-table th { border: 1px solid var(--border); }
 
         /* Sticky Left Column rules applied to all datatables */
         #outputTable th:first-child, #outputTable td:first-child,
@@ -191,75 +203,91 @@
         #customOiXgTable th:first-child, #customOiXgTable td:first-child,
         #teamXgTable th:first-child, #teamXgTable td:first-child {
             text-align: left; position: sticky; left: 0; z-index: 3;
-            font-weight: bold; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            font-weight: bold; box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            border-right: 1px solid var(--border);
+            background-color: #ffffff;
         }
-
-        .top-header { background-color: var(--primary); color: var(--header-text); position: sticky; top: 0; z-index: 5 !important; height: 38px; box-sizing: border-box; }
-        
-        /* Set specific header colors for 5v5 & Team xG Tables (#334155) */
-        #teamOiXgTable th.top-header,
-        #customOiXgTable th.top-header,
-        #teamXgTable th.top-header { background-color: #334155; }
-
-        /* Interactive Table Sort Styling */
-        #teamXgTable th.top-header { cursor: pointer; transition: background-color 0.2s; user-select: none; }
-        #teamXgTable th.top-header:hover { background-color: #475569 !important; }
-        #teamXgTable th:first-child.top-header:hover { background-color: #334155 !important; }
-
-        /* Retain specialized colors for the sticky Player/Team columns */
-        #outputTable th:first-child.top-header,
-        #teamOiXgTable th:first-child.top-header,
-        #customOiXgTable th:first-child.top-header,
-        #teamXgTable th:first-child.top-header { background-color: #1e293b; z-index: 6 !important; }
-
-        #outputTable th:last-child.top-header,
-        #customOiXgTable th:last-child.top-header { background-color: #dc2626; z-index: 6 !important; }
-
-        .group-header {
-            text-align: center !important; font-weight: 700; font-size: 14px;
-            text-transform: uppercase; position: sticky; top: 0; z-index: 5 !important; height: 38px; box-sizing: border-box;
-        }
-        
-        .recent-group { background-color: #334155 !important; color: #ffffff !important; }
-        .season-group { background-color: #cbd5e1 !important; color: #0f172a !important; }
-
-        /* Evaluation Tab Vertical Sticky Header Fix */
-        #outputTable thead tr:nth-child(2) th {
-            position: sticky;
-            top: 38px; 
-            z-index: 4;
-            box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1);
-        }
-
-        /* Remove internal grid lines within headers */
-        #outputTable thead th, #compareTable thead th, #teamOiXgTable thead th, #customOiXgTable thead th, #teamXgTable thead th {
-            border-right: none !important; border-bottom: none !important;
-        }
-        #outputTable thead, #compareTable thead, #teamOiXgTable thead, #customOiXgTable thead, #teamXgTable thead {
-            border-bottom: 2px solid var(--border);
-        }
-        #compareTable th.player-header {
-            border-bottom: 2px solid var(--border) !important;
-        }
-
-        /* Row Striping */
-        tbody tr:nth-child(odd) td { background-color: #ffffff; }
-        tbody tr:nth-child(even) td { background-color: #f1f5f9; }
-        
-        #outputTable tbody tr:nth-child(odd) td:first-child,
-        #teamOiXgTable tbody tr:nth-child(odd) td:first-child,
-        #customOiXgTable tbody tr:nth-child(odd) td:first-child,
-        #teamXgTable tbody tr:nth-child(odd) td:first-child { background-color: #ffffff; }
 
         #outputTable tbody tr:nth-child(even) td:first-child,
         #teamOiXgTable tbody tr:nth-child(even) td:first-child,
         #customOiXgTable tbody tr:nth-child(even) td:first-child,
         #teamXgTable tbody tr:nth-child(even) td:first-child { background-color: #f1f5f9; }
 
-        /* 5v5 Position Sub-headers - Sticky */
+        /* Row Striping */
+        tbody tr:nth-child(odd) td { background-color: #ffffff; }
+        tbody tr:nth-child(even) td { background-color: #f1f5f9; }
+
+        /* --- SUB-PIXEL PAINT GAP SEALER --- */
+        /* These horizontal 1px box-shadows dynamically bleed to the right to seal the rendering tear */
+        
+        /* 1. Main Global Top Header */
+        .top-header { 
+            background-color: var(--primary); color: var(--header-text); 
+            position: sticky; top: 0; z-index: 5 !important; height: 38px; box-sizing: border-box; 
+            box-shadow: 1px 0 0 0 var(--primary);
+        }
+        
+        /* 2. Team xG Tab Defaults */
+        #teamOiXgTable th.top-header,
+        #customOiXgTable th.top-header,
+        #teamXgTable th.top-header { 
+            background-color: #334155; 
+            box-shadow: 1px 0 0 0 #334155;
+        }
+
+        /* 3. Interactive Table Sort Styling */
+        #teamXgTable th.top-header { cursor: pointer; transition: background-color 0.2s, box-shadow 0.2s; user-select: none; }
+        #teamXgTable th.top-header:hover { background-color: #475569 !important; box-shadow: 1px 0 0 0 #475569 !important; }
+        #teamXgTable th:first-child.top-header:hover { background-color: #1e293b !important; box-shadow: 1px 0 0 0 #1e293b, 2px 0 5px rgba(0,0,0,0.1) !important; }
+
+        /* 4. Left-most Sticky Headers (Player/Team) */
+        #outputTable th:first-child.top-header,
+        #teamOiXgTable th:first-child.top-header,
+        #customOiXgTable th:first-child.top-header,
+        #teamXgTable th:first-child.top-header { 
+            background-color: #1e293b; z-index: 6 !important; 
+            box-shadow: 1px 0 0 0 #1e293b, 2px 0 5px rgba(0,0,0,0.1) !important;
+        }
+
+        /* 5. Right-most Sticky Headers (Remove) */
+        #outputTable th:last-child.top-header,
+        #customOiXgTable th:last-child.top-header { 
+            background-color: #dc2626; z-index: 6 !important; 
+            box-shadow: 1px 0 0 0 #dc2626 !important;
+        }
+
+        /* 6. Evaluation Sub-Groups */
+        .group-header {
+            text-align: center !important; font-weight: 700; font-size: 14px;
+            text-transform: uppercase; position: sticky; top: 0; z-index: 5 !important; height: 38px; box-sizing: border-box;
+        }
+        
+        .recent-group { 
+            background-color: #334155 !important; color: #ffffff !important; 
+            box-shadow: 1px 0 0 0 #334155 !important;
+        }
+        .season-group { 
+            background-color: #cbd5e1 !important; color: #0f172a !important; 
+            box-shadow: 1px 0 0 0 #cbd5e1 !important;
+        }
+
+        /* 7. Evaluation Tab Row 2 (Needs Drop Shadow on the bottom PLUS the right gap bleed) */
+        #outputTable thead tr:nth-child(2) th {
+            position: sticky;
+            top: 37px; /* 1px overlap seals the horizontal layout gap */
+            z-index: 4;
+        }
+        #outputTable thead tr:nth-child(2) th.recent-group {
+            box-shadow: 1px 0 0 0 #334155, 0 2px 4px -2px rgba(0,0,0,0.1) !important;
+        }
+        #outputTable thead tr:nth-child(2) th.season-group {
+            box-shadow: 1px 0 0 0 #cbd5e1, 0 2px 4px -2px rgba(0,0,0,0.1) !important;
+        }
+
+        /* 8. Subheaders 5v5 (FORWARDS / DEFENSEMEN) */
         .subheader-row td {
             position: sticky !important;
-            top: 38px; 
+            top: 37px; 
             left: 0;
             z-index: 4 !important; 
             text-align: center !important;
@@ -267,8 +295,14 @@
             color: #0f172a !important;
             font-weight: 800 !important;
             letter-spacing: 2px !important;
-            box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1) !important;
-            border-bottom: 2px solid #cbd5e1 !important;
+            box-shadow: 1px 0 0 0 #e2e8f0, 0 2px 4px -2px rgba(0,0,0,0.1) !important;
+        }
+
+        /* Ensure thick bottom borders apply independently from the gap sealers */
+        thead tr:last-child th,
+        .subheader-row td,
+        th[rowspan="2"] {
+            border-bottom: 2px solid var(--border) !important;
         }
 
         .remove-btn { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px; font-weight: bold; }
@@ -282,13 +316,12 @@
         #compareTable { table-layout: fixed; width: 100%; min-width: 600px; }
         #compareTable thead tr:nth-child(2) th { width: 20%; }
 
-        #compareTable th { background-color: var(--primary); color: white; position: sticky; top: 0; }
-        #compareTable th.stat-col { background-color: #cbd5e1; color: #0f172a; font-weight: 800; font-size: 14px; }
+        #compareTable th { background-color: var(--primary); color: white; position: sticky; top: 0; box-shadow: 1px 0 0 0 var(--primary) !important; }
+        #compareTable th.stat-col { background-color: #cbd5e1; color: #0f172a; font-weight: 800; font-size: 14px; box-shadow: 1px 0 0 0 #cbd5e1 !important; }
         #compareTable td.stat-name { font-weight: bold; background-color: #e2e8f0 !important; color: #0f172a; font-size: 12px; }
-        #compareTable tbody td { font-weight: 700; }
         
         #compareTable thead tr:first-child th { top: 0; z-index: 10; height: 85px; }
-        #compareTable thead tr:nth-child(2) th { top: 85px; z-index: 9; box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1); }
+        #compareTable thead tr:nth-child(2) th { top: 84px; z-index: 9; box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1); }
 
         .player-header {
             box-sizing: border-box; 
@@ -300,6 +333,9 @@
             text-align: center;
             overflow: hidden;
             background-color: #ffffff !important; 
+            border-bottom: 2px solid var(--border) !important;
+            border-right: 1px solid var(--border) !important;
+            box-shadow: none !important;
         }
 
         .player-header span {
@@ -345,6 +381,12 @@
             font-size: 1.4rem;
         }
 
+        .faq-container h4 {
+            color: #0f172a;
+            margin: 30px 0 15px 0;
+            font-size: 1.15rem;
+        }
+
         .faq-table {
             width: 100%;
             border-collapse: collapse;
@@ -355,7 +397,6 @@
         .faq-table th, .faq-table td {
             text-align: left;
             padding: 12px;
-            border: 1px solid var(--border);
         }
 
         .faq-table th { background-color: #f1f5f9; color: #0f172a; width: 150px; font-weight: 700; }
