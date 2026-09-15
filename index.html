@@ -6,6 +6,9 @@
     <title>A&G Player Evaluation Tool</title>
     <!-- PapaParse Library for reading Google Sheets CSVs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Chart.js Library for Data Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
         :root {
             --bg-main: #ffffff; 
@@ -218,16 +221,12 @@
         tbody tr:nth-child(even) td { background-color: #f1f5f9; }
 
         /* --- SUB-PIXEL PAINT GAP SEALER --- */
-        /* These horizontal 1px box-shadows dynamically bleed to the right to seal the rendering tear */
-        
-        /* 1. Main Global Top Header */
         .top-header { 
             background-color: var(--primary); color: var(--header-text); 
             position: sticky; top: 0; z-index: 5 !important; height: 38px; box-sizing: border-box; 
             box-shadow: 1px 0 0 0 var(--primary);
         }
         
-        /* 2. Team xG Tab Defaults */
         #teamOiXgTable th.top-header,
         #customOiXgTable th.top-header,
         #teamXgTable th.top-header { 
@@ -235,12 +234,10 @@
             box-shadow: 1px 0 0 0 #334155;
         }
 
-        /* 3. Interactive Table Sort Styling */
         #teamXgTable th.top-header { cursor: pointer; transition: background-color 0.2s, box-shadow 0.2s; user-select: none; }
         #teamXgTable th.top-header:hover { background-color: #475569 !important; box-shadow: 1px 0 0 0 #475569 !important; }
         #teamXgTable th:first-child.top-header:hover { background-color: #1e293b !important; box-shadow: 1px 0 0 0 #1e293b, 2px 0 5px rgba(0,0,0,0.1) !important; }
 
-        /* 4. Left-most Sticky Headers (Player/Team) */
         #outputTable th:first-child.top-header,
         #teamOiXgTable th:first-child.top-header,
         #customOiXgTable th:first-child.top-header,
@@ -249,114 +246,157 @@
             box-shadow: 1px 0 0 0 #1e293b, 2px 0 5px rgba(0,0,0,0.1) !important;
         }
 
-        /* 5. Right-most Sticky Headers (Remove) */
         #outputTable th:last-child.top-header,
         #customOiXgTable th:last-child.top-header { 
             background-color: #dc2626; z-index: 6 !important; 
             box-shadow: 1px 0 0 0 #dc2626 !important;
         }
 
-        /* 6. Evaluation Sub-Groups */
         .group-header {
             text-align: center !important; font-weight: 700; font-size: 14px;
             text-transform: uppercase; position: sticky; top: 0; z-index: 5 !important; height: 38px; box-sizing: border-box;
         }
         
-        .recent-group { 
-            background-color: #334155 !important; color: #ffffff !important; 
-            box-shadow: 1px 0 0 0 #334155 !important;
-        }
-        .season-group { 
-            background-color: #cbd5e1 !important; color: #0f172a !important; 
-            box-shadow: 1px 0 0 0 #cbd5e1 !important;
-        }
+        .recent-group { background-color: #334155 !important; color: #ffffff !important; box-shadow: 1px 0 0 0 #334155 !important; }
+        .season-group { background-color: #cbd5e1 !important; color: #0f172a !important; box-shadow: 1px 0 0 0 #cbd5e1 !important; }
 
-        /* 7. Evaluation Tab Row 2 (Needs Drop Shadow on the bottom PLUS the right gap bleed) */
-        #outputTable thead tr:nth-child(2) th {
-            position: sticky;
-            top: 37px; /* 1px overlap seals the horizontal layout gap */
-            z-index: 4;
-        }
-        #outputTable thead tr:nth-child(2) th.recent-group {
-            box-shadow: 1px 0 0 0 #334155, 0 2px 4px -2px rgba(0,0,0,0.1) !important;
-        }
-        #outputTable thead tr:nth-child(2) th.season-group {
-            box-shadow: 1px 0 0 0 #cbd5e1, 0 2px 4px -2px rgba(0,0,0,0.1) !important;
-        }
+        #outputTable thead tr:nth-child(2) th { position: sticky; top: 37px; z-index: 4; }
+        #outputTable thead tr:nth-child(2) th.recent-group { box-shadow: 1px 0 0 0 #334155, 0 2px 4px -2px rgba(0,0,0,0.1) !important; }
+        #outputTable thead tr:nth-child(2) th.season-group { box-shadow: 1px 0 0 0 #cbd5e1, 0 2px 4px -2px rgba(0,0,0,0.1) !important; }
 
-        /* 8. Subheaders 5v5 (FORWARDS / DEFENSEMEN) */
         .subheader-row td {
-            position: sticky !important;
-            top: 37px; 
-            left: 0;
-            z-index: 4 !important; 
-            text-align: center !important;
-            background-color: #e2e8f0 !important;
-            color: #0f172a !important;
-            font-weight: 800 !important;
-            letter-spacing: 2px !important;
-            box-shadow: 1px 0 0 0 #e2e8f0, 0 2px 4px -2px rgba(0,0,0,0.1) !important;
+            position: sticky !important; top: 37px; left: 0; z-index: 4 !important; text-align: center !important;
+            background-color: #e2e8f0 !important; color: #0f172a !important; font-weight: 800 !important; letter-spacing: 2px !important;
+            box-shadow: 1px 0 0 0 #e2e8f0, 0 2px 4px -2px rgba(0,0,0,0.1) !important; border-bottom: 2px solid #cbd5e1 !important; border-right: none !important;
         }
 
-        /* Ensure thick bottom borders apply independently from the gap sealers */
-        thead tr:last-child th,
-        .subheader-row td,
-        th[rowspan="2"] {
-            border-bottom: 2px solid var(--border) !important;
-        }
+        thead tr:last-child th, .subheader-row td, th[rowspan="2"] { border-bottom: 2px solid var(--border) !important; }
 
         .remove-btn { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px; font-weight: bold; }
         .remove-btn:hover { color: #991b1b; }
         
         #loadingMsg { text-align: center; padding: 40px; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-        /* Compare Tab Specifics */
-        .compare-grid { width: 100%; max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        /* Compare Tab Specifics - Redesigned Grid System */
+        .compare-grid { width: 100%; max-width: 950px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
         
-        #compareTable { table-layout: fixed; width: 100%; min-width: 600px; }
-        #compareTable thead tr:nth-child(2) th { width: 20%; }
-
-        #compareTable th { background-color: var(--primary); color: white; position: sticky; top: 0; box-shadow: 1px 0 0 0 var(--primary) !important; }
-        #compareTable th.stat-col { background-color: #cbd5e1; color: #0f172a; font-weight: 800; font-size: 14px; box-shadow: 1px 0 0 0 #cbd5e1 !important; }
-        #compareTable td.stat-name { font-weight: bold; background-color: #e2e8f0 !important; color: #0f172a; font-size: 12px; }
-        
-        #compareTable thead tr:first-child th { top: 0; z-index: 10; height: 85px; }
-        #compareTable thead tr:nth-child(2) th { top: 84px; z-index: 9; box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1); }
-
-        .player-header {
-            box-sizing: border-box; 
-            position: relative;
-            font-size: 20px !important;
-            height: 85px; 
-            padding: 0 20px !important; 
-            vertical-align: middle;
-            text-align: center;
-            overflow: hidden;
-            background-color: #ffffff !important; 
-            border-bottom: 2px solid var(--border) !important;
-            border-right: 1px solid var(--border) !important;
-            box-shadow: none !important;
+        .stat-section {
+            width: 100%;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
         }
 
-        .player-header span {
+        .stat-section h3 {
+            text-align: center; margin: 0 0 25px 0; color: #0f172a; text-transform: uppercase; font-size: 20px; font-weight: 900; letter-spacing: 1px;
+            padding-bottom: 15px; border-bottom: 2px solid var(--border);
+        }
+
+        .stat-grid {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            background: #f8fafc;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-profile {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            position: relative;
+        }
+
+        .stat-profile .logo {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 90px;
+            opacity: 0.15;
+            z-index: 1;
+        }
+
+        .stat-profile .mug {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border);
+            background-color: #ffffff;
             position: relative;
             z-index: 2;
-            color: #0f172a; 
-            font-weight: 900;
-            text-shadow: 0px 0px 8px rgba(255, 255, 255, 1), 0px 0px 12px rgba(255, 255, 255, 0.8), 1px 1px 0px #ffffff, -1px -1px 0px #ffffff;
-            display: inline-block; 
         }
 
-        .header-bg {
-            position: absolute;
-            top: 5px; left: 5px; right: 5px; bottom: 5px;
-            background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-            opacity: 0.25; 
-            z-index: 1;
-            transform: scale(1.35); 
+        .stat-profile .details {
+            position: relative;
+            z-index: 2;
+            text-align: left;
         }
+
+        .stat-profile .details h4 {
+            margin: 0 0 6px 0;
+            color: #0f172a;
+            font-size: 20px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .stat-profile .details span {
+            background-color: #334155;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .stat-chart-wrapper {
+            position: relative;
+            height: 230px;
+            width: 100%;
+        }
+        
+        .stat-chart-wrapper-tall {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        .basic-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 14px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .basic-data-table th { background-color: #334155; color: white; padding: 10px; font-size: 13px; text-transform: uppercase; border: none;}
+        .basic-data-table th:first-child { width: 40%; }
+        .basic-data-table th:nth-child(2), .basic-data-table th:nth-child(3) { width: 30%; }
+        .basic-data-table td { padding: 10px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+        .basic-data-table tr:last-child td { border-bottom: none; }
+        .basic-data-table td:first-child { font-weight: 800; background-color: #cbd5e1; color: #0f172a; border-right: 2px solid var(--border); }
+        .basic-data-table td:last-child { border-right: none; }
 
         /* FAQ Specific CSS */
         .faq-container {
@@ -403,6 +443,29 @@
         .faq-table td { background-color: #ffffff; }
 
         .faq-list li { margin-bottom: 10px; }
+        
+        /* Scatter Plot Canvas Container */
+        .chart-container {
+            width: 100%;
+            max-width: 850px;
+            margin: 0 auto 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Force a strict 1:1 Aspect Ratio Box to keep axes mathematically perfectly square */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 550px;
+            aspect-ratio: 1 / 1;
+        }
     </style>
 </head>
 <body>
@@ -484,26 +547,55 @@
                 <button onclick="renderComparison()">Compare Stats</button>
             </div>
 
-            <div class="dashboard" style="max-height: none; overflow-y: visible; overflow-x: auto;">
-                <table id="compareTable">
-                    <thead>
-                        <tr>
-                            <th colspan="2" id="p1NameHeader" class="player-header"><span>Player 1</span></th>
-                            <th class="stat-col">STATISTIC</th>
-                            <th colspan="2" id="p2NameHeader" class="player-header"><span>Player 2</span></th>
-                        </tr>
-                        <tr>
-                            <th class="recent-group" style="font-size:12px;">Last 5 Games</th>
-                            <th class="season-group" style="font-size:12px;">Season</th>
-                            <th class="stat-col"></th>
-                            <th class="season-group" style="font-size:12px;">Season</th>
-                            <th class="recent-group" style="font-size:12px;">Last 5 Games</th>
-                        </tr>
-                    </thead>
-                    <tbody id="compareBody">
-                        <tr><td colspan="5" style="padding:40px; color:#64748b;">Select two players above to view comparison.</td></tr>
-                    </tbody>
-                </table>
+            <!-- Dynamic Dashboard Sections (Hidden initially) -->
+            <div id="compareDashboards" style="display: none; flex-direction: column; gap: 40px; margin-top: 10px;">
+                
+                <!-- BASIC DATA -->
+                <div class="stat-section">
+                    <h3>Basic Data</h3>
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div id="p1BasicHeader"></div>
+                            <div id="p1BasicTable"></div>
+                        </div>
+                        <div class="stat-card">
+                            <div id="p2BasicHeader"></div>
+                            <div id="p2BasicTable"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RATE STAT RANKS -->
+                <div class="stat-section">
+                    <h3>Rate Stat Ranks</h3>
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div id="p1RankHeader"></div>
+                            <div class="stat-chart-wrapper"><canvas id="p1RankRecentChart"></canvas></div>
+                            <div class="stat-chart-wrapper" style="border-top: 2px solid #e2e8f0; padding-top: 20px; margin-top: 20px;"><canvas id="p1RankSeasonChart"></canvas></div>
+                        </div>
+                        <div class="stat-card">
+                            <div id="p2RankHeader"></div>
+                            <div class="stat-chart-wrapper"><canvas id="p2RankRecentChart"></canvas></div>
+                            <div class="stat-chart-wrapper" style="border-top: 2px solid #e2e8f0; padding-top: 20px; margin-top: 20px;"><canvas id="p2RankSeasonChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LUCK METRICS -->
+                <div class="stat-section">
+                    <h3>Luck Metrics</h3>
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div id="p1LuckHeader"></div>
+                            <div class="stat-chart-wrapper-tall"><canvas id="p1LuckChart"></canvas></div>
+                        </div>
+                        <div class="stat-card">
+                            <div id="p2LuckHeader"></div>
+                            <div class="stat-chart-wrapper-tall"><canvas id="p2LuckChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -580,7 +672,7 @@
             <div style="font-weight: 800; font-size: 16px; color: var(--text-main); text-transform: uppercase;">Select Data View:</div>
             <select id="teamXgSelect" onchange="renderTeamXg()" style="padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 14px; font-weight: 600; min-width: 250px;">
                 <option value="all_5">All-Strengths - Last 5 Games</option>
-                <option value="all_season">All-Strengths - Full Season</option>
+                <option value="all_season" selected>All-Strengths - Full Season</option>
                 <option value="5v5_5">5v5 - Last 5 Games</option>
                 <option value="5v5_season">5v5 - Full Season</option>
             </select>
@@ -591,7 +683,7 @@
             <span style="position: relative; z-index: 2; color: #64748b; font-size: 12px; font-weight: 500; margin-top: 8px; text-align: center;">Note: Team xG data are adjusted to reflect shooting talent and exclude shots on an empty net</span>
         </div>
 
-        <div class="dashboard" style="max-width: 850px; margin: 0 auto;">
+        <div class="dashboard" style="max-width: 850px; margin: 0 auto 40px auto;">
             <table id="teamXgTable">
                 <thead>
                     <tr>
@@ -603,6 +695,17 @@
                 </thead>
                 <tbody id="teamXgBody"></tbody>
             </table>
+        </div>
+
+        <!-- Team xG Scatter Plot -->
+        <div class="chart-container">
+            <h3 id="chartTitle" style="text-align: center; margin: 0 0 20px 0; color: #0f172a; text-transform: uppercase; font-size: 18px; letter-spacing: 1px;"></h3>
+            <div class="chart-wrapper">
+                <canvas id="teamXgChart"></canvas>
+            </div>
+            <div style="color: #64748b; font-size: 12px; font-weight: 500; margin-top: 25px; text-align: center;">
+                * Note: The Y-axis (Opponent xG) is inverted so that better defensive performance appears higher on the plot.
+            </div>
         </div>
     </div>
 
@@ -672,8 +775,19 @@
         let globalTeamXgData = [];
         let paceKeyPrefix = '82'; 
         
+        // Data boundaries for Rate Rank charts
+        let maxRanks = { season: { F: 0, D: 0 }, recent: { F: 0, D: 0 } };
+        
         let teamXgSortCol = 'perc';
         let teamXgSortDesc = true;
+        let scatterChartInstance = null;
+        
+        // Chart instances for Comparison Tab
+        let p1RankRecentChartInst = null; let p1RankSeasonChartInst = null;
+        let p2RankRecentChartInst = null; let p2RankSeasonChartInst = null;
+        let p1LuckChartInst = null; let p2LuckChartInst = null;
+        
+        window.teamLogosCache = {}; 
 
         const fmt = (val, dec=2) => (typeof val === 'number') ? val.toFixed(dec) : (val || '-');
         const rnk = (val) => val ? val : '-';
@@ -723,6 +837,27 @@
                     } 
                 });
 
+                // Calculate Global Maximum Ranks for dynamic chart limits
+                const rankKeys = ['i_shots_60_rank', 'i_cf_60_rank', 'i_scf_60_rank', 'i_xg_adjusted_60_rank', 'oi_cf_60_rank', 'oi_scf_60_rank', 'oi_xg_adjusted_60_rank'];
+                Object.values(fullDatabase).forEach(data => {
+                    if (data.season && data.season.position) {
+                        let pos = data.season.position.trim().toUpperCase();
+                        if (pos === 'F' || pos === 'D') {
+                            ['season', 'recent'].forEach(time => {
+                                let d = data[time];
+                                if (d) {
+                                    rankKeys.forEach(k => {
+                                        let val = parseInt(d[k]);
+                                        if (!isNaN(val) && val > maxRanks[time][pos]) {
+                                            maxRanks[time][pos] = val;
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
+
                 globalOiXgData = oiXgData.map(row => {
                     let sId = fullDatabase[row.skater] && fullDatabase[row.skater].season ? fullDatabase[row.skater].season.skater_id : null;
                     return { ...row, skater_id: sId };
@@ -763,6 +898,27 @@
                 option.value = player;
                 oiXgDatalist.appendChild(option);
             });
+            
+            // Smarter UX for all search dropdowns
+            document.querySelectorAll('input[list]').forEach(input => {
+                // Highlight text on click
+                input.addEventListener('focus', function() {
+                    this.select();
+                });
+                
+                // Allow a single backspace to wipe the populated name and reset the list
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace') {
+                        // Wipe if the input currently holds a full matching name
+                        if (fullDatabase[this.value] || globalOiXgData.some(d => d.skater === this.value)) {
+                            this.value = '';
+                            e.preventDefault();
+                            this.blur();
+                            this.focus();
+                        }
+                    }
+                });
+            });
 
             let seasonSkaters = Object.values(fullDatabase)
                 .filter(d => d.season && d.season.position)
@@ -785,16 +941,25 @@
             if (topF.length >= 2) {
                 document.getElementById('p1Search').value = topF[0].name;
                 document.getElementById('p2Search').value = topF[1].name;
+                // Don't auto-render comparison here if the user hasn't explicitly navigated, 
+                // but we will do it to prep the views for an easy demo.
                 renderComparison(); 
             }
 
             const allTeams = [...new Set(globalOiXgData.map(d => d.team).filter(Boolean))].sort();
             const teamSelect = document.getElementById('teamSelect');
+            
+            // Pre-load SVG Team Logos for the Chart.js Scatter Plot
             allTeams.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t;
                 opt.innerText = t;
                 teamSelect.appendChild(opt);
+
+                const img = new Image();
+                img.onload = () => { if (scatterChartInstance) scatterChartInstance.update(); };
+                img.src = `https://assets.nhle.com/logos/nhl/svg/${t}_light.svg`;
+                window.teamLogosCache[t] = img;
             });
 
             if(allTeams.length > 0) {
@@ -802,6 +967,8 @@
                 renderTeamOiXg();
             }
 
+            // Initialize Team xG view explicitly to full season as requested
+            document.getElementById('teamXgSelect').value = 'all_season';
             renderTeamXg();
         }
 
@@ -880,10 +1047,6 @@
             selectedPlayers = [];
             renderDashboard();
         }
-
-        document.getElementById('playerSearch').addEventListener("keypress", (e) => {
-            if(e.key === "Enter") { e.preventDefault(); addPlayer(); }
-        });
 
         // ==============================================
         // 5v5 xG DATA TAB FUNCTIONS
@@ -1003,84 +1166,294 @@
             renderCustomOiXg();
         }
 
-        document.getElementById('oiXgPlayerSearch').addEventListener("keypress", (e) => {
-            if(e.key === "Enter") { e.preventDefault(); addOiXgPlayer(); }
-        });
+        // ==============================================
+        // COMPARISON TAB FUNCTIONS (REDESIGNED)
+        // ==============================================
+        
+        // Custom plugin to elegantly inject data labels inside horizontal bars with dynamic contrast
+        const customBarLabelPlugin = {
+            id: 'customBarLabelPlugin',
+            afterDatasetsDraw(chart) {
+                const ctx = chart.ctx;
+                chart.data.datasets.forEach((dataset, i) => {
+                    const meta = chart.getDatasetMeta(i);
+                    meta.data.forEach((bar, j) => {
+                        const val = dataset.data[j];
+                        if (val === null || val === undefined) return;
+                        
+                        // Extracting the value depending on if it's a floating bar (Ranks) or standard bar (Luck)
+                        let textVal = '';
+                        let isRank = false;
+                        let rankNum = null;
+                        
+                        if (Array.isArray(val)) {
+                            isRank = true;
+                            rankNum = val[1];
+                            textVal = (rankNum !== null && rankNum !== undefined) ? String(rankNum) : '';
+                        } else if (dataset.dataFormat === 'percent' && typeof val === 'number') {
+                            textVal = val.toFixed(1) + '%';
+                        }
+                        
+                        if (!textVal) return;
 
-        // ==============================================
-        // COMPARISON TAB FUNCTIONS
-        // ==============================================
+                        ctx.save();
+                        ctx.font = 'bold 12px sans-serif';
+                        const textWidth = ctx.measureText(textVal).width;
+                        const props = bar.getProps(['x', 'y', 'base']);
+                        
+                        // For inverted charts, the visual bar is between min(x,base) and max(x,base)
+                        const leftEdge = Math.min(props.x, props.base);
+                        const rightEdge = Math.max(props.x, props.base);
+                        const barWidth = rightEdge - leftEdge;
+                        
+                        let textX, align, textColor;
+                        if (barWidth >= textWidth + 16) {
+                            // Text fits inside the bar
+                            textX = rightEdge - 6;
+                            align = 'right';
+                            
+                            if (isRank) {
+                                // Simplify logic for Rank labels: top 10 is white, else navy
+                                textColor = (rankNum <= 10) ? '#ffffff' : '#0f172a';
+                            } else {
+                                // Smart contrast calculator for Luck Metrics
+                                let bgColor = Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[j] : dataset.backgroundColor;
+                                let r, g, b;
+                                if (bgColor && bgColor.startsWith('rgb')) {
+                                    let match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                                    if (match) { r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]); }
+                                } else if (bgColor === '#cbd5e1') { r=203; g=213; b=225; }
+                                else if (bgColor === '#334155') { r=51; g=65; b=85; }
+                                
+                                let luminance = 0;
+                                if(r !== undefined) { luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255; }
+                                
+                                textColor = luminance > 0.55 ? '#0f172a' : '#ffffff';
+                            }
+                        } else {
+                            // Bar is too small, pop the text out to the right side
+                            textX = rightEdge + 6;
+                            align = 'left';
+                            textColor = '#0f172a';
+                        }
+                        
+                        ctx.fillStyle = textColor;
+                        ctx.textAlign = align;
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(textVal, textX, props.y + 1); // +1px vertical alignment bump
+                        ctx.restore();
+                    });
+                });
+            }
+        };
+
+        // Helper function: Blends color from Blue (Rank 1) to Light Grey (Middle) to Red (Max Rank)
+        function getRankColor(rank, maxRank) {
+            if (!rank || maxRank <= 1) return '#e2e8f0'; 
+            let p = (rank - 1) / (maxRank - 1);
+            if (p < 0) p = 0; if (p > 1) p = 1;
+            
+            let r, g, b;
+            if (p <= 0.5) {
+                // Blue (#3b82f6) to Light Grey (#e2e8f0)
+                let pct = p / 0.5;
+                r = Math.round(59 + pct * (226 - 59));
+                g = Math.round(130 + pct * (232 - 130));
+                b = Math.round(246 + pct * (240 - 246));
+            } else {
+                // Light Grey (#e2e8f0) to Red (#ef4444)
+                let pct = (p - 0.5) / 0.5;
+                r = Math.round(226 + pct * (239 - 226));
+                g = Math.round(232 + pct * (68 - 232));
+                b = Math.round(240 + pct * (68 - 240));
+            }
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
         function renderComparison() {
             const p1Name = document.getElementById('p1Search').value.trim();
             const p2Name = document.getElementById('p2Search').value.trim();
-            const tbody = document.getElementById('compareBody');
             
             if(!fullDatabase[p1Name] || !fullDatabase[p2Name]) {
                 alert("Please select two valid players from the dropdown lists.");
                 return;
             }
 
-            const t1 = fullDatabase[p1Name].team ? fullDatabase[p1Name].team : 'NHL';
-            const t2 = fullDatabase[p2Name].team ? fullDatabase[p2Name].team : 'NHL';
-
-            document.getElementById('p1NameHeader').innerHTML = `
-                <div class="header-bg" style="background-image: url('https://assets.nhle.com/logos/nhl/svg/${t1}_light.svg');"></div>
-                <span>${p1Name}</span>
-            `;
-            document.getElementById('p2NameHeader').innerHTML = `
-                <div class="header-bg" style="background-image: url('https://assets.nhle.com/logos/nhl/svg/${t2}_light.svg');"></div>
-                <span>${p2Name}</span>
-            `;
-
             const p1_s = fullDatabase[p1Name].season || {};
             const p1_r = fullDatabase[p1Name].recent || {};
             const p2_s = fullDatabase[p2Name].season || {};
             const p2_r = fullDatabase[p2Name].recent || {};
 
-            const statsToCompare = [
-                { label: "GAMES PLAYED", k: "gp", f: (v) => fmt(v, 0) },
-                { label: "GOALS", k: "goals", f: (v) => fmt(v, 0) },
-                { label: "ASSISTS", k: "assists", f: (v) => fmt(v, 0) },
-                { label: "POINTS", k: "points", f: (v) => fmt(v, 0) },
-                { label: `${paceKeyPrefix}G PACE`, k_s: `goals_${paceKeyPrefix}`, f: (v) => fmt(v, 0) },
-                { label: `${paceKeyPrefix}PTS PACE`, k_s: `points_${paceKeyPrefix}`, f: (v) => fmt(v, 0) },
-                { label: "ATOI", k: "toi_gp", f: (v) => fmt(v, 2) },
-                { label: "IPP", k: "ipp", f: (v) => fmt(v, 2) },
-                { label: "S%", k: "sh_percent", f: (v) => fmt(v, 2) },
-                { label: "oiSH%", k: "oi_sh_percent", f: (v) => fmt(v, 2) },
-                { label: "xG%", k: "skt_xg_adjusted_percent", f: pct },
-                { label: "Shots/60", k: "i_shots_60_rank", f: rnk },
-                { label: "iCF/60", k: "i_cf_60_rank", f: rnk },
-                { label: "iSCF/60", k: "i_scf_60_rank", f: rnk },
-                { label: "ixG/60", k: "i_xg_adjusted_60_rank", f: rnk },
-                { label: "CF/60", k: "oi_cf_60_rank", f: rnk },
-                { label: "SCF/60", k: "oi_scf_60_rank", f: rnk },
-                { label: "xG/60", k: "oi_xg_adjusted_60_rank", f: rnk }
-            ];
-
-            tbody.innerHTML = '';
-
-            statsToCompare.forEach(stat => {
-                const row = document.createElement('tr');
+            document.getElementById('compareDashboards').style.display = 'flex';
+            
+            // 1. Build the dynamic Player Profiles for the Headers
+            const buildPlayerProfile = (name, data) => {
+                let t = data.team ? data.team : 'NHL';
+                let s = data.season || {};
+                let pos = s.position ? s.position.trim().toUpperCase() : 'N/A';
+                let mugHtml = s.skater_id ? `<img class="mug" src="https://assets.nhle.com/mugs/nhl/latest/${s.skater_id}.png" onerror="this.style.display='none';">` : '';
+                let logoHtml = `<img class="logo" src="https://assets.nhle.com/logos/nhl/svg/${t}_light.svg" onerror="this.style.display='none';">`;
                 
-                let p1_recent = stat.k ? stat.f(p1_r[stat.k]) : '-';
-                let p1_season = stat.k_s ? stat.f(p1_s[stat.k_s]) : stat.f(p1_s[stat.k]);
-                let p2_season = stat.k_s ? stat.f(p2_s[stat.k_s]) : stat.f(p2_s[stat.k]);
-                let p2_recent = stat.k ? stat.f(p2_r[stat.k]) : '-';
-
-                row.innerHTML = `
-                    <td>${p1_recent}</td>
-                    <td>${p1_season}</td>
-                    <td class="stat-name">${stat.label}</td>
-                    <td>${p2_season}</td>
-                    <td>${p2_recent}</td>
+                return `
+                    <div class="stat-profile">
+                        ${logoHtml}
+                        ${mugHtml}
+                        <div class="details">
+                            <h4>${name}</h4>
+                            <span>POSITION: ${pos}</span>
+                        </div>
+                    </div>
                 `;
-                tbody.appendChild(row);
+            };
+
+            const p1ProfileHtml = buildPlayerProfile(p1Name, fullDatabase[p1Name]);
+            const p2ProfileHtml = buildPlayerProfile(p2Name, fullDatabase[p2Name]);
+
+            // Apply profile headers to all 3 sections
+            document.getElementById('p1BasicHeader').innerHTML = p1ProfileHtml;
+            document.getElementById('p2BasicHeader').innerHTML = p2ProfileHtml;
+            document.getElementById('p1RankHeader').innerHTML = p1ProfileHtml;
+            document.getElementById('p2RankHeader').innerHTML = p2ProfileHtml;
+            document.getElementById('p1LuckHeader').innerHTML = p1ProfileHtml;
+            document.getElementById('p2LuckHeader').innerHTML = p2ProfileHtml;
+
+            // --- 2. Chart Rendering Helper ---
+            const drawCompareChart = (canvasId, chartInst, config) => {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                if(chartInst) chartInst.destroy();
+                return new Chart(ctx, config);
+            };
+
+            // --- 3. BASIC DATA TABLES ---
+            const buildBasicTable = (r, s) => {
+                return `
+                    <table class="basic-data-table">
+                        <thead>
+                            <tr>
+                                <th>STATISTIC</th>
+                                <th>LAST 5</th>
+                                <th>SEASON</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>GAMES PLAYED</td><td>${fmt(r.gp, 0)}</td><td>${fmt(s.gp, 0)}</td></tr>
+                            <tr style="background-color: #f8fafc;"><td>ATOI</td><td>${fmt(r.toi_gp)}</td><td>${fmt(s.toi_gp)}</td></tr>
+                            <tr><td>GOALS</td><td>${fmt(r.goals, 0)}</td><td>${fmt(s.goals, 0)}</td></tr>
+                            <tr style="background-color: #f8fafc;"><td>ASSISTS</td><td>${fmt(r.assists, 0)}</td><td>${fmt(s.assists, 0)}</td></tr>
+                            <tr><td>POINTS</td><td>${fmt(r.points, 0)}</td><td>${fmt(s.points, 0)}</td></tr>
+                            <tr style="background-color: #f8fafc;"><td>${paceKeyPrefix}G PACE</td><td>-</td><td>${fmt(s['goals_'+paceKeyPrefix], 0)}</td></tr>
+                            <tr><td>${paceKeyPrefix}PTS PACE</td><td>-</td><td>${fmt(s['points_'+paceKeyPrefix], 0)}</td></tr>
+                        </tbody>
+                    </table>
+                `;
+            };
+
+            document.getElementById('p1BasicTable').innerHTML = buildBasicTable(p1_r, p1_s);
+            document.getElementById('p2BasicTable').innerHTML = buildBasicTable(p2_r, p2_s);
+
+
+            // --- 4. RATE STAT RANKS CHARTS ---
+            const rankLabels = ['Shots/60', 'iCF/60', 'iSCF/60', 'ixG/60', 'CF/60', 'SCF/60', 'xG/60'];
+            const parseRank = (val) => { let n = parseInt(val); return isNaN(n) ? null : n; };
+            
+            const getRankData = (r, s) => {
+                return {
+                    recent: [ parseRank(r.i_shots_60_rank), parseRank(r.i_cf_60_rank), parseRank(r.i_scf_60_rank), parseRank(r.i_xg_adjusted_60_rank), parseRank(r.oi_cf_60_rank), parseRank(r.oi_scf_60_rank), parseRank(r.oi_xg_adjusted_60_rank) ],
+                    season: [ parseRank(s.i_shots_60_rank), parseRank(s.i_cf_60_rank), parseRank(s.i_scf_60_rank), parseRank(s.i_xg_adjusted_60_rank), parseRank(s.oi_cf_60_rank), parseRank(s.oi_scf_60_rank), parseRank(s.oi_xg_adjusted_60_rank) ]
+                };
+            };
+
+            const p1Ranks = getRankData(p1_r, p1_s);
+            const p2Ranks = getRankData(p2_r, p2_s);
+            
+            const pos1 = p1_s.position ? p1_s.position.trim().toUpperCase() : 'F';
+            const pos2 = p2_s.position ? p2_s.position.trim().toUpperCase() : 'F';
+            
+            // Visual trick: Lower rank is better, so map [maxRnk, rank] on a reversed X-axis. 
+            // A rank of 1 draws a huge bar from Max down to 1. 
+            const rankConfig = (data, title, maxRnk) => ({
+                type: 'bar',
+                data: {
+                    labels: rankLabels,
+                    datasets: [{
+                        label: title,
+                        data: data.map(d => d ? [maxRnk, d] : null), 
+                        backgroundColor: data.map(d => getRankColor(d, maxRnk)),
+                        barThickness: 18
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: title, color: '#0f172a', font: {size: 13, weight: 'bold'}, padding: {bottom: 10} },
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => 'Rank: ' + (ctx.raw ? ctx.raw[1] : 'N/A') } }
+                    },
+                    scales: {
+                        x: { 
+                            min: 1, max: maxRnk, reverse: true, // Inverted Scale
+                            grid: { color: 'rgba(226, 232, 240, 0.4)' } 
+                        },
+                        y: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 12 }, color: '#0f172a' } }
+                    }
+                },
+                plugins: [customBarLabelPlugin]
             });
+
+            p1RankRecentChartInst = drawCompareChart('p1RankRecentChart', p1RankRecentChartInst, rankConfig(p1Ranks.recent, 'Last 5 Games', maxRanks.recent[pos1] || 500));
+            p1RankSeasonChartInst = drawCompareChart('p1RankSeasonChart', p1RankSeasonChartInst, rankConfig(p1Ranks.season, 'Full Season', maxRanks.season[pos1] || 500));
+            
+            p2RankRecentChartInst = drawCompareChart('p2RankRecentChart', p2RankRecentChartInst, rankConfig(p2Ranks.recent, 'Last 5 Games', maxRanks.recent[pos2] || 500));
+            p2RankSeasonChartInst = drawCompareChart('p2RankSeasonChart', p2RankSeasonChartInst, rankConfig(p2Ranks.season, 'Full Season', maxRanks.season[pos2] || 500));
+
+
+            // --- 5. LUCK METRICS CHARTS ---
+            const luckLabels = ['IPP', 'S%', 'oiSH%', 'xG%'];
+            const getLuckData = (r, s) => {
+                return {
+                    recent: [ r.ipp||0, r.sh_percent||0, r.oi_sh_percent||0, (r.skt_xg_adjusted_percent||0) * 100 ],
+                    season: [ s.ipp||0, s.sh_percent||0, s.oi_sh_percent||0, (s.skt_xg_adjusted_percent||0) * 100 ]
+                };
+            };
+
+            const p1Luck = getLuckData(p1_r, p1_s);
+            const p2Luck = getLuckData(p2_r, p2_s);
+
+            const luckConfig = (data) => ({
+                type: 'bar',
+                data: {
+                    labels: luckLabels,
+                    datasets: [
+                        { label: 'Last 5 Games', data: data.recent, backgroundColor: '#334155', dataFormat: 'percent', barThickness: 16 },
+                        { label: 'Full Season', data: data.season, backgroundColor: '#cbd5e1', dataFormat: 'percent', barThickness: 16 }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            min: 0, max: 100, 
+                            ticks: { callback: function(value) { return value + '%'; } },
+                            grid: { color: 'rgba(226, 232, 240, 0.4)' } 
+                        },
+                        y: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 13 }, color: '#0f172a' } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 12, weight: 'bold' }, color: '#64748b' } },
+                        tooltip: {
+                            callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.raw.toFixed(1) + '%'; } }
+                        }
+                    }
+                },
+                plugins: [customBarLabelPlugin]
+            });
+
+            p1LuckChartInst = drawCompareChart('p1LuckChart', p1LuckChartInst, luckConfig(p1Luck));
+            p2LuckChartInst = drawCompareChart('p2LuckChart', p2LuckChartInst, luckConfig(p2Luck));
         }
 
         // ==============================================
-        // TEAM xG TAB FUNCTIONS
+        // TEAM xG TAB FUNCTIONS & SCATTER PLOT
         // ==============================================
         function sortTeamXg(col) {
             if (teamXgSortCol === col) {
@@ -1159,6 +1532,147 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            // Map data for the scatter plot
+            const chartData = globalTeamXgData.map(d => ({
+                x: d[k_for],
+                y: d[k_against],
+                perc: d[k_perc],
+                team: d.team
+            }));
+
+            renderScatterPlot(chartData, viewText);
+        }
+
+        function renderScatterPlot(chartData, titleText) {
+            document.getElementById('chartTitle').innerText = titleText;
+            
+            // Calculate a unified Min and Max so the X and Y axes are exactly identical
+            let minData = Math.min(...chartData.map(d=>d.x), ...chartData.map(d=>d.y));
+            let maxData = Math.max(...chartData.map(d=>d.x), ...chartData.map(d=>d.y));
+            let range = maxData - minData;
+            
+            // Dynamically determine the perfect step size based on data spread (Max interval of 10)
+            let step = 2; 
+            if (range > 50) step = 10;
+            else if (range > 20) step = 5;
+
+            // Strict floor and ceiling rounding to prevent extended whitespace bounds
+            let axisMin = Math.floor(minData / step) * step;
+            let axisMax = Math.ceil(maxData / step) * step;
+            axisMin = Math.max(0, axisMin); // Don't fall below zero unnecessarily
+
+            const ctx = document.getElementById('teamXgChart').getContext('2d');
+            
+            if (scatterChartInstance) {
+                scatterChartInstance.data.datasets[0].data = chartData;
+                scatterChartInstance.options.scales.x.min = axisMin;
+                scatterChartInstance.options.scales.x.max = axisMax;
+                scatterChartInstance.options.scales.x.ticks.stepSize = step;
+                scatterChartInstance.options.scales.y.min = axisMin;
+                scatterChartInstance.options.scales.y.max = axisMax;
+                scatterChartInstance.options.scales.y.ticks.stepSize = step;
+                scatterChartInstance.update();
+            } else {
+                scatterChartInstance = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Team Offense vs Defense',
+                            data: chartData,
+                            pointRadius: 18, // Expand the transparent hit-box to trigger hover tooltips naturally
+                            pointHoverRadius: 18,
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            borderColor: 'rgba(0,0,0,0)',
+                            pointHitRadius: 18
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        clip: false, // Ensure logos aren't sliced off if they sit perfectly on the chart boundary
+                        layout: { padding: { top: 20, right: 20, bottom: 20, left: 10 } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyFont: { size: 13 },
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        const d = context.raw;
+                                        return `${d.team} | Team xG: ${d.x.toFixed(1)} | Opponent xG: ${d.y.toFixed(1)} | xG%: ${(d.perc * 100).toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                min: axisMin,
+                                max: axisMax,
+                                ticks: { stepSize: step },
+                                title: { display: true, text: 'Team xG', font: { weight: 'bold', size: 14 }, color: '#0f172a' },
+                                grid: { color: 'rgba(226, 232, 240, 0.4)' }
+                            },
+                            y: {
+                                min: axisMin,
+                                max: axisMax,
+                                reverse: true, // Inverts the axis so lower numbers (better defense) are at the top
+                                ticks: { stepSize: step },
+                                title: { display: true, text: 'Opponent xG', font: { weight: 'bold', size: 14 }, color: '#0f172a' },
+                                grid: { color: 'rgba(226, 232, 240, 0.4)' }
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'diagonalLinePlugin',
+                        beforeDraw(chart) {
+                            const { ctx, scales: { x, y } } = chart;
+                            ctx.save();
+                            ctx.beginPath();
+                            // Because X and Y share exact Min/Max values and the canvas is physically 1:1 Square,
+                            // drawing from (x.min, y.min) to (x.max, y.max) perfectly crosses the graph diagonally at exactly 45 degrees.
+                            ctx.moveTo(x.getPixelForValue(x.min), y.getPixelForValue(x.min));
+                            ctx.lineTo(x.getPixelForValue(x.max), y.getPixelForValue(x.max));
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeStyle = 'rgba(15, 23, 42, 0.2)'; 
+                            ctx.setLineDash([6, 6]);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }, {
+                        id: 'customTeamLogosPlugin',
+                        afterDatasetsDraw(chart) {
+                            const { ctx } = chart;
+                            chart.getDatasetMeta(0).data.forEach((datapoint, index) => {
+                                const team = chart.data.datasets[0].data[index].team;
+                                const img = window.teamLogosCache[team];
+                                if (img && img.complete) {
+                                    ctx.save();
+                                    ctx.globalAlpha = 0.75; // Set opacity to 75%
+                                    
+                                    const size = 48; // Increased logo size
+                                    const imgAspectRatio = img.width / img.height;
+                                    let drawWidth = size;
+                                    let drawHeight = size;
+                                    
+                                    // Protect the native aspect ratio of the SVG logo so it doesn't stretch
+                                    if (imgAspectRatio > 1) {
+                                        drawHeight = size / imgAspectRatio;
+                                    } else if (imgAspectRatio < 1) {
+                                        drawWidth = size * imgAspectRatio;
+                                    }
+                                    
+                                    ctx.drawImage(img, datapoint.x - drawWidth/2, datapoint.y - drawHeight/2, drawWidth, drawHeight);
+                                    ctx.restore();
+                                }
+                            });
+                        }
+                    }]
+                });
+            }
         }
 
         fetchGoogleSheetsData();
