@@ -459,12 +459,32 @@
             align-items: center;
         }
         
+        .chart-container-full {
+            width: 100%;
+            max-width: 95%;
+            margin: 0 auto 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 30px 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         /* Force a strict 1:1 Aspect Ratio Box to keep axes mathematically perfectly square */
         .chart-wrapper {
             position: relative;
             width: 100%;
             max-width: 550px;
             aspect-ratio: 1 / 1;
+        }
+        
+        .chart-wrapper-wide {
+            position: relative;
+            width: 100%;
+            height: 500px;
         }
     </style>
 </head>
@@ -632,6 +652,14 @@
                 <tbody id="teamOiXgBodyD" style="border-top: 3px solid #1e293b;"></tbody>
             </table>
         </div>
+        
+        <!-- 5v5 xG Scatter Plot -->
+        <div class="chart-container-full">
+            <h3 id="oiXgScatterTitle" style="text-align: center; margin: 0 0 20px 0; color: #0f172a; text-transform: uppercase; font-size: 18px; letter-spacing: 1px;"></h3>
+            <div class="chart-wrapper-wide">
+                <canvas id="oiXgScatterChart"></canvas>
+            </div>
+        </div>
 
         <div style="max-width: 95%; margin: 40px auto 20px auto; border-top: 2px solid var(--border); padding-top: 30px;">
             <h2 style="color: #0f172a; margin-bottom: 20px; font-size: 1.5rem; text-transform: uppercase; font-weight: 800;">COMPARE PLAYERS</h2>
@@ -781,6 +809,7 @@
         let teamXgSortCol = 'perc';
         let teamXgSortDesc = true;
         let scatterChartInstance = null;
+        let oiXgScatterChartInst = null;
         
         // Chart instances for Comparison Tab
         let p1RankRecentChartInst = null; let p1RankSeasonChartInst = null;
@@ -957,7 +986,10 @@
                 teamSelect.appendChild(opt);
 
                 const img = new Image();
-                img.onload = () => { if (scatterChartInstance) scatterChartInstance.update(); };
+                img.onload = () => { 
+                    if (scatterChartInstance) scatterChartInstance.update(); 
+                    if (oiXgScatterChartInst) oiXgScatterChartInst.update(); 
+                };
                 img.src = `https://assets.nhle.com/logos/nhl/svg/${t}_light.svg`;
                 window.teamLogosCache[t] = img;
             });
@@ -1101,6 +1133,141 @@
                 
                 if(p.pos === 'F') { fBody.appendChild(tr); } else { dBody.appendChild(tr); }
             });
+
+            // Map data for the 5v5 Scatter Plot
+            const chartData = teamPlayers.map(p => ({
+                x: p.toi_gp_5v5,
+                y: p.oi_xg_perc * 100, // convert to % integer scale
+                player: p.skater,
+                team: p.team
+            }));
+
+            renderOiXgScatterPlot(chartData, team);
+        }
+
+        function renderOiXgScatterPlot(chartData, teamName) {
+            document.getElementById('oiXgScatterTitle').innerText = `${teamName} - 5v5 TOI vs oixG%`;
+
+            const ctx = document.getElementById('oiXgScatterChart').getContext('2d');
+            
+            if (oiXgScatterChartInst) {
+                oiXgScatterChartInst.data.datasets[0].data = chartData;
+                oiXgScatterChartInst.update();
+            } else {
+                oiXgScatterChartInst = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Players',
+                            data: chartData,
+                            pointRadius: 16, 
+                            pointHoverRadius: 16,
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            borderColor: 'rgba(0,0,0,0)',
+                            pointHitRadius: 16
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        clip: false, 
+                        layout: { padding: { top: 20, right: 30, bottom: 20, left: 20 } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyFont: { size: 13 },
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        const d = context.raw;
+                                        return `${d.player} | TOI/GP: ${d.x.toFixed(2)} | oixG%: ${d.y.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: '5v5 TOI / GP (Mins)', font: { weight: 'bold', size: 14 }, color: '#0f172a' },
+                                grid: { color: 'rgba(226, 232, 240, 0.4)' }
+                            },
+                            y: {
+                                title: { display: true, text: 'oixG %', font: { weight: 'bold', size: 14 }, color: '#0f172a' },
+                                grid: { color: 'rgba(226, 232, 240, 0.4)' },
+                                ticks: { callback: function(value) { return value + '%'; } }
+                            }
+                        }
+                    },
+                    plugins: [
+                        {
+                            id: 'horizontal50LinePlugin',
+                            beforeDraw(chart) {
+                                const { ctx, scales: { x, y } } = chart;
+                                // Draw 50% Break-Even Reference Line
+                                if(y.min <= 50 && y.max >= 50) {
+                                    ctx.save();
+                                    ctx.beginPath();
+                                    ctx.moveTo(x.left, y.getPixelForValue(50));
+                                    ctx.lineTo(x.right, y.getPixelForValue(50));
+                                    ctx.lineWidth = 1.5;
+                                    ctx.strokeStyle = 'rgba(15, 23, 42, 0.2)'; 
+                                    ctx.setLineDash([6, 6]);
+                                    ctx.stroke();
+                                    ctx.restore();
+                                }
+                            }
+                        },
+                        {
+                            id: 'oiXgPlayerLogosPlugin',
+                            afterDatasetsDraw(chart) {
+                                const { ctx } = chart;
+                                chart.getDatasetMeta(0).data.forEach((datapoint, index) => {
+                                    const d = chart.data.datasets[0].data[index];
+                                    const img = window.teamLogosCache[d.team];
+                                    if (img && img.complete) {
+                                        ctx.save();
+                                        ctx.globalAlpha = 0.75; 
+                                        
+                                        const size = 32; // Smaller size for player chart to avoid overcrowding
+                                        const imgAspectRatio = img.width / img.height;
+                                        let drawWidth = size;
+                                        let drawHeight = size;
+                                        
+                                        if (imgAspectRatio > 1) {
+                                            drawHeight = size / imgAspectRatio;
+                                        } else if (imgAspectRatio < 1) {
+                                            drawWidth = size * imgAspectRatio;
+                                        }
+                                        
+                                        ctx.drawImage(img, datapoint.x - drawWidth/2, datapoint.y - drawHeight/2, drawWidth, drawHeight);
+                                        
+                                        // Draw player last name
+                                        const nameParts = d.player.split(' ');
+                                        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : d.player;
+                                        
+                                        ctx.globalAlpha = 1.0;
+                                        ctx.font = 'bold 11px sans-serif';
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'top';
+                                        
+                                        // Draw a white stroke for text outline to make it readable over gridlines and logos
+                                        ctx.lineWidth = 2;
+                                        ctx.strokeStyle = '#ffffff';
+                                        ctx.strokeText(lastName, datapoint.x, datapoint.y + drawHeight/2 + 2);
+                                        
+                                        ctx.fillStyle = '#0f172a';
+                                        ctx.fillText(lastName, datapoint.x, datapoint.y + drawHeight/2 + 2);
+                                        
+                                        ctx.restore();
+                                    }
+                                });
+                            }
+                        }
+                    ]
+                });
+            }
         }
 
         function renderCustomOiXg() {
